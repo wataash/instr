@@ -3,22 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using NationalInstruments.VisaNS;
-
-
-enum SweepStaircaseType
-{
-    Linear, Log10, Log25, Log50
-}
-
-enum SweepMode
-{
-    Single, Double
-}
+using Ivi.Visa.Interop;
 
 namespace Agilent4156C
 {
-    static class Program
+    public static class Program
     {
         /// <summary>
         /// アプリケーションのメイン エントリ ポイントです。
@@ -26,223 +15,111 @@ namespace Agilent4156C
         [STAThread]
         static void Main()
         {
-            string resourceString = "GPIB0::18::INSTR";
-            MessageBasedSession mbSession;
+    //        System.IO.File.WriteAllText(
+    //System.Environment.ExpandEnvironmentVariables("%temp%") +
+    //"\\" + "test.ttxt", "aaa"
+    //);
+            string VISAResource = "GPIB0::18::INSTR";
+            // Agilent
+            var RM = new ResourceManager();
+            var DMM = new FormattedIO488();
+            DMM.IO = (IMessage)RM.Open(VISAResource);
 
-            //try
-            //{
-            //    mbSession = (MessageBasedSession)ResourceManager.
-            //        GetLocalManager().Open(resourceString);
-            //}
-            //catch (InvalidCastException)
-            //{
-            //    MessageBox.
-            //        Show("Resource selected must be a message-based session");
-            //}
-            //catch (Exception exp)
-            //{
-            //    //MessageBox.Show(exp.Message);
-            //    Console.WriteLine(exp.Message);
-            //}
-
-            mbSession = (MessageBasedSession)ResourceManager.
-                GetLocalManager().Open(resourceString);
-            SweepMeasurement(mbSession, 500e-3, 1e-3, 10e-3, 1, 2);
-            mbSession.Dispose();
-
+            try
+            {
+                DMM.IO.Timeout = (int)10 * 60 * 1000; // 10min in [ms]
+                SweepMeasurement(DMM, 200e-3, 10e-3, 10e-3, 1, 3);
+            }
+            finally
+            {
+                DMM.IO.Close();
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(DMM);
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(RM);
+            }
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
             //Application.Run(new Form1());
         }
 
-        // Level 4 /////////////////////////////////////////////////////////////
-        // min(stepmV): 0.1mV
-        public static void SweepMeasurement(
-            MessageBasedSession mbSession, double endV, double stepV,
-            double compI, int groundSMU, int biasSMU)
+        public static List<string> SweepMeasurement(FormattedIO488 DMM, double endV,
+          double stepV, double compI, int groundSMU, int sweepSMU)
         {
-            // Let's hard code.
-            //{
-            //    string writeStr = "";
-            //    writeStr += ":PAGE:CHAN:SMU1:FUNC CONS;";
-            //    writeStr += ":PAGE:CHAN:SMU1:INAM 'I1';";
-            //    writeStr += ":PAGE:CHAN:SMU1:MODE COMM;";
-            //    writeStr += ":PAGE:CHAN:SMU1:SRES 0;";
-            //    writeStr += ":PAGE:CHAN:SMU1:STAN OFF;";
-            //    writeStr += ":PAGE:CHAN:SMU1:VNAM 'V1';";
-            //    mbSession.Write(writeStr);
-            //    writeStr = "";
-            //    writeStr += ":PAGE:CHAN:SMU2:FUNC VAR1;";
-            //    writeStr += ":PAGE:CHAN:SMU2:INAM 'I2';";
-            //    writeStr += ":PAGE:CHAN:SMU2:MODE V;";
-            //    writeStr += ":PAGE:CHAN:SMU2:SRES 0;";
-            //    writeStr += ":PAGE:CHAN:SMU2:STAN OFF;";
-            //    writeStr += ":PAGE:CHAN:SMU2:VNAM 'V2';";
-            //    mbSession.Write(writeStr);
-            //}
-            // IntegTime();
-            // hold delay time
-            string s;
-            mbSession.Write(":PAGE:MEAS:SWE:VAR1:STAR 0");
-            s = ";:PAGE:MEAS:VAR1:STEP " + stepV + ";";
-            mbSession.Write(s);
-            // for
-            mbSession.Write(":PAGE:MEAS:SWE:VAR1:STOP" + endV); //!!!!
-            mbSession.Write(":PAGE:DISP:SET:GRAP:X:MIN" + -endV);
-            mbSession.Write(":PAGE:DISP:SET:GRAP:X:MAX" + endV);
-            // stepV!!
-            mbSession.Write(":PAGE:SCON:MEAS:DOUB"); // doub以外にstop appがある
-            s = mbSession.Query("*OPC?");
-            s = mbSession.Query(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'V2';");
-            s = mbSession.Query(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'I2';");
-            double v = 0.1;
-            while (v <= endV)
+            // Hard code
+            var timeStamps = new List<string>();
+            var voltages = new List<string>();
+            var currents = new List<string>();
+            DMM.WriteString("*RST");
+
+            // Channel settings
+            // TODO: Integration time, Hold time, Deley time
+            // Disable all units
+            foreach (string s in new[] { "SMU1", "SMU2", "SMU3", "SMU4",
+                                         "VSU1", "VSU2", "VMU1", "VMU2" })
             {
-                mbSession.Write(":PAGE:DISP:SET:GRAP:X:MIN" + -v);
-                mbSession.Write(":PAGE:DISP:SET:GRAP:X:MAX" + v);
-                // pos
-                mbSession.Write(":PAGE:MEAS:SWE:VAR1:STOP" + v);
-                mbSession.Write(":PAGE:SCON:MEAS:DOUB");
-                s = mbSession.Query("*OPC?");
-                s = mbSession.Query(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'V2';");
-                s = mbSession.Query(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'I2';");
-                // V/deltaV + 1 != points ならbreak;
-                // nega
-                mbSession.Write(":PAGE:MEAS:SWE:VAR1:STOP" + -v);
-                mbSession.Write(":PAGE:SCON:MEAS:DOUB");
-                s = mbSession.Query("*OPC?");
-                s = mbSession.Query(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'V2';");
-                s = mbSession.Query(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'I2';");
-                // V/deltaV + 1 != points ならbreak;
-                //
-                v += 0.1;
+                DMM.WriteString(":PAGE:CHAN:" + s + ":DIS");
             }
+            DMM.WriteString(
+                ":PAGE:CHAN:SMU" + groundSMU + ":VNAM 'V" + groundSMU + "';" +
+                ":PAGE:CHAN:SMU" + groundSMU + ":INAM 'I" + groundSMU + "';" +
+                ":PAGE:CHAN:SMU" + groundSMU + ":MODE COMM;FUNC CONS;" +
+                ":PAGE:CHAN:SMU" + sweepSMU + ":VNAM 'V" + sweepSMU + "';" +
+                ":PAGE:CHAN:SMU" + sweepSMU + ":INAM 'I" + sweepSMU + "';" +
+                ":PAGE:CHAN:SMU" + sweepSMU + ":MODE V;FUNC VAR1;");
+
+            // Measurement setup
+            DMM.WriteString(":PAGE:MEAS:SWE:VAR1:STAR 0");
+            DMM.WriteString(":PAGE:MEAS:VAR1:STEP " + stepV + ";");
+            DMM.WriteString(":PAGE:MEAS:VAR1:MODE DOUB;");
+            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN " + -1e-12); // TODO: move to other code
+            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX " + 1e-12); // TODO: move to other code
+
+            //foreach (var item in collection)
+            foreach (double v in AlternativeRange(0.1, 0.1, endV)) // 100mV step
+            {
+                // Measure setup
+                DMM.WriteString(":PAGE:DISP:SET:GRAP:X:MIN " + -Math.Abs(v));
+                DMM.WriteString(":PAGE:DISP:SET:GRAP:X:MAX " + Math.Abs(v));
+                // Measure
+                DMM.WriteString(":PAGE:MEAS:SWE:VAR1:STOP " + v);
+                string initTime = DateTime.Now.ToString(); // 2015/07/06 20:13:08
+                initTime = initTime.Replace(":", "-");
+                initTime = initTime.Replace("/", "-");
+                initTime = initTime.Replace(" ", "_"); // 2015-07-06_20-13-08
+                DMM.WriteString(":PAGE:SCON:MEAS:APP");
+                //DMM.WriteString(":PAGE:SCON:MEAS:SING");
+                //DMM.WriteString(":PAGE:SCON:MEAS:STOP");
+                DMM.WriteString("*OPC?");
+                DMM.ReadString();
+                //DMM.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'V2';");
+                DMM.WriteString(":FORM:DATA ASC;:DATA? 'V" + sweepSMU + "';");
+                voltages.Add(DMM.ReadString());
+                //DMM.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'I2';");
+                DMM.WriteString(":FORM:DATA ASC;:DATA? 'I" + sweepSMU + "';");
+                currents.Add(DMM.ReadString());
+                // break if (V/deltaV + 1 != points);
+                System.IO.File.WriteAllText(
+                    System.Environment.ExpandEnvironmentVariables("%temp%") +
+                    "\\" + initTime + ".txt",
+                    currents.Last());
+
+                //System.IO.File.Write
+            }
+            return voltages;
         }
 
-        //// Level 3 /////////////////////////////////////////////////////////////
-        //static void Initialize(MessageBasedSession mbSession)
-        //{
-        //    DefaultInstrumentSetup(mbSession);
-        //    string q = ErrorQuery(mbSession);
-        //    MessageBox.Show(q); // if not error not msgbox
-        //}
-
-        //public static void ConfigureMeasurementMode(
-        //    MessageBasedSession mbSession, int measurementMode)
-        //{
-        //    string modeString;
-        //    switch (measurementMode)
-        //    {
-        //        case 0:
-        //            modeString = ":PAGE:CHAN:MODE SWE;";
-        //            break;
-        //        case 1:
-        //            modeString = ":PAGE:CHAN:MODE SAMP;";
-        //            break;
-        //        case 2:
-        //            modeString = ":PAGE:CHAN:MODE QSCV;";
-        //            break;
-        //        default:
-        //            MessageBox.Show("mode must be 0, 1 or 2");
-        //            modeString = ":PAGE:CHAN:MODE SWE;";
-        //            break;
-        //    }
-        //    mbSession.Write(modeString);
-        //    ErrorQuery(mbSession);
-        //}
-
-        //public static void ConfigurePrimarySweepMeasurement(
-        //    MessageBasedSession mbSession, int sweepMode, double compliance,
-        //    double powerCompliance, double startV, double stopV,
-        //    int sweepStaircaseType, double stepV)
-        //{
-        //    string writeStr = "";
-        //    switch (sweepMode)
-        //    {
-        //        case 0:
-        //            writeStr += ":PAGE:MEAS:VAR1:MODE SING;";
-        //            break;
-        //        case 1:
-        //            writeStr += ":PAGE:MEAS:VAR1:MODE DOUB;";
-        //            break;
-        //        default:
-        //            MessageBox.Show("sweep mode 0 or 1");
-        //            break;
-        //    }
-        //    // double tostr?
-        //    writeStr += ":PAGE:MEAS:VAR1:COMP " + compliance + ";";
-        //    switch (sweepStaircaseType)
-        //    {
-        //        case 0:
-        //            writeStr += ":PAGE:MEAS:VAR1:SPAC LIN;";
-        //            break;
-        //        case 1:
-        //            writeStr += ":PAGE:MEAS:VAR1:SPAC L10;";
-        //            break;
-        //        case 2:
-        //            writeStr += ":PAGE:MEAS:VAR1:SPAC L25;";
-        //            break;
-        //        case 3:
-        //            writeStr += ":PAGE:MEAS:VAR1:SPAC L50;";
-        //            break;
-        //        default:
-        //            MessageBox.Show("err");
-        //            break;
-        //    }
-        //    writeStr += ":PAGE:MEAS:VAR1:STAR " + startV + ";";
-        //    writeStr += ":PAGE:MEAS:VAR1:STOP " + stopV + ";";
-        //    writeStr += ":PAGE:MEAS:VAR1:STEP " + stepV + ";";
-        //    mbSession.Write(writeStr);
-        //    ErrorQuery(mbSession);
-        //}
-
-        //public static void ConfigureSubordinateSweepMeasurement(
-        //    MessageBasedSession mbSession, double compliance,
-        //    bool onPowerCompliance, double powerCompliance, int numSteps,
-        //    double step, double start)
-        //{
-
-        //}
-
-        //public static void ConfugreIntegrationTime(int NPLC, int integTimeMode,
-        //    double shortIntegrationTime)
-        //{
-
-        //}
-
-        //public static double[] ReadTraceData(
-        //    MessageBasedSession mbSession, int timeout, string variableName)
-        //{
-        //    return new[] { 0.0, 0.0 };
-        //}
-        //public static void WaitForAcquisitionComplete(int timeoutMilliSec)
-        //{
-
-        //}
-
-
-        //// Level 2 /////////////////////////////////////////////////////////////
-        //static void Reset(MessageBasedSession mbSession)
-        //{
-        //    mbSession.Write("*RST");
-        //    DefaultInstrumentSetup(mbSession);
-        //}
-        //// Level 1 /////////////////////////////////////////////////////////////
-        //static void DefaultInstrumentSetup(MessageBasedSession mbSession)
-        //{
-        //    // *ESE 60 - enables command, execution, query, and device errors
-        //    // in event status register
-        //    // *SRE 48 - enables message available, standard event bits in the
-        //    // status byte
-        //    // * CLS - clears status
-        //    mbSession.Write("*ESE 60;*SRE 48;*CLS;");
-        //}
-        //static string ErrorQuery(MessageBasedSession mbSession)
-        //{
-        //    mbSession.Write(":SYST:ERR?");
-        //    //mbSession.Query()
-        //    return mbSession.ReadString(256);
-        //}
+        public static double[] AlternativeRange(double start, double delta, double end)
+        {
+            // TODO: smart way using LINQ?
+            var res = new List<double>();
+            double append = start;
+            while (append <= end)
+            {
+                res.Add(append);
+                res.Add(-append);
+                append += delta;
+            }
+            return res.ToArray();
+        }
 
     }
 }
