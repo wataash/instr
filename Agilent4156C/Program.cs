@@ -22,7 +22,7 @@ namespace Agilent4156C
             try
             {
                 DMM.IO.Timeout = (int)10 * 60 * 1000; // 10min in [ms]
-                SweepMeasurement(DMM, 200e-3, 10e-3, 10e-3, 1, 3);
+                SweepMeasurement(DMM, 500e-3, .1e-3, 10e-3, 1, 3, 10e-6);
             }
             finally
             {
@@ -37,7 +37,8 @@ namespace Agilent4156C
 
 
         public static void SweepMeasurement(FormattedIO488 DMM, double endV,
-            double stepV, double compI, int groundSMU, int sweepSMU)
+            double stepV, double compI, int groundSMU, int sweepSMU,
+            double yMax)
         {
             // Hard code
             string VStr, IStr, filePath, writeStr;
@@ -66,11 +67,18 @@ namespace Agilent4156C
 
             // Measurement setup ///////////////////////////////////////////////
             DMM.WriteString(":PAGE:MEAS:SWE:VAR1:STAR 0");
+            DMM.WriteString(":PAGE:MEAS:VAR1:STOP 0.1;");
+            DMM.WriteString(":PAGE:CHAN:UFUN:DEF 'ABSI','A','ABS(I" + sweepSMU + ")'");
+            DMM.WriteString("PAGE:DISP:GRAP:Y2:NAME 'ABSI'");
+            // Without below line, error on :PAGE:DISP:SET:GRAP:Y1
             DMM.WriteString(":PAGE:MEAS:VAR1:STEP " + stepV + ";");
             DMM.WriteString(":PAGE:MEAS:VAR1:MODE DOUB;");
             // TODO: move to another place
-            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN " + -1e-12);
-            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX " + 1e-12);
+            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN " + -yMax);
+            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX " + yMax);
+            DMM.WriteString(":PAGE:DISP:GRAP:Y2:SCAL LOG");
+            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 10e-13");
+            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 1e-3"); // on 4156C: dec/grid
 
             foreach (double v in AlternativeRange(0.1, 0.1, endV)) // 100mV step
             {
@@ -102,18 +110,24 @@ namespace Agilent4156C
                 filePath = Environment.ExpandEnvironmentVariables("%temp%") +
                     "\\" + initTime + ".txt";
                 System.IO.File.WriteAllText(filePath, writeStr);
+                filePath = Environment.ExpandEnvironmentVariables("%temp%") +
+                    "\\last.txt";
+                System.IO.File.WriteAllText(filePath, writeStr);
                 if (abort) break; // Finish if "stop button" on 4156C pressed.
             }
             return;
         }
 
         /// <summary>
-        /// Example: 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <example>
+        /// <code>
         /// Write2DimDouble(
         ///     new[] { new[] { 1.0, 2, }, new[] { 3.0, 4 } });
         /// returns "1,2\n3,4"
-        /// </summary>
-        /// <param name="data"></param>
+        /// </code>
+        /// </example>
         public static string TwoDimDouble2String(double[][] data)
         {
             string joined = "";
@@ -125,15 +139,16 @@ namespace Agilent4156C
         }
 
         /// <summary>
-        /// Verified only in Japanese locale.
         /// </summary>
         /// <returns>Example: "2015-07-06_20-13-08"</returns>
+        /// <remarks>Verified only in Japanese locale.</remarks>
         public static string GetTime()
         {
             string t = DateTime.Now.ToString();
             // 2015/07/06 20:13:08 --> 2015-07-06_20-13-08
             return t.Replace(":", "-").Replace("/", "-").Replace(" ", "_");
         }
+
         /// <summary>
         /// CommaStringToDoubleArray("1,2,3e3") --> {1.0, 2.0, 3000.0}
         /// </summary>
@@ -145,13 +160,15 @@ namespace Agilent4156C
         }
 
         /// <summary>
-        /// Example: AlternativeRange(1.00, 0.11, 1.55)
-        /// returns {1.00, -1.00, 1.11, -1.11, 1.22, -1.22}
         /// </summary>
         /// <param name="start"></param>
         /// <param name="delta"></param>
         /// <param name="end"></param>
         /// <returns></returns>
+        /// <example>
+        /// AlternativeRange(1.00, 0.11, 1.55)
+        /// returns {1.00, -1.00, 1.11, -1.11, 1.22, -1.22}
+        /// </example>
         public static double[] AlternativeRange(double start, double delta, double end)
         {
             // TODO: smart way using LINQ?
@@ -168,15 +185,16 @@ namespace Agilent4156C
 
         /// <summary>
         /// Grater than 1e10: Infinite.
-        /// Example: 
-        /// double[][] o;
-        /// ZipDetectInf(new[] { 1, 1e20, 3 }, new[] { 1.1, 3.3, 800 }, out o);
-        /// returns true (1e20 > 1e10), o = new[][] {{1.0, 1.1}, {3.0, 800.0}}
         /// </summary>
         /// <param name="in1"></param>
         /// <param name="in2"></param>
         /// <param name="o"></param>
         /// <returns></returns>
+        /// <example>
+        /// double[][] o;
+        /// ZipDetectInf(new[] { 1, 1e20, 3 }, new[] { 1.1, 3.3, 800 }, out o);
+        /// returns true (1e20 > 1e10), o = new[][] {{1.0, 1.1}, {3.0, 800.0}}
+        /// </example>
         public static bool ZipDetectInf(double[] in1, double[] in2, out double[][] o)
         {
             bool detectInfinity = false;
