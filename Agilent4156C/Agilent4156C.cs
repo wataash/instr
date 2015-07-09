@@ -5,14 +5,15 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Ivi.Visa.Interop;
 
+
 namespace Automation.Suss100
 {
-    public static partial class Agilent4156C
+    public static class Agilent4156C
     {
-
         [STAThread]
         static void Main()
         {
+            ChannelSetup(1,2);
             string VISAResource = "GPIB0::18::INSTR";
             // Agilent
             var RM = new ResourceManager();
@@ -127,9 +128,19 @@ namespace Automation.Suss100
         /// <returns></returns>
         private static int ChannelSetup(params int[] channels)
         {
+            
+            // if elem in channels
+            // TODO: enum, ChannelSetup in another proj.
             throw new NotImplementedException();
             return 0;
+
         }
-      
+
+
+    }
+
+    class VisaCommunicator
+    {
+
     }
 }

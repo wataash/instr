@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+enum Unit
+{
+    SMU1, SMU2, SMU3, SMU4, VSU1, VSU2, VMU1, VMU2
+}
 namespace Automation.Suss100
 {
     public static class F
