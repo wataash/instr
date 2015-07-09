@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.22823.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Agilent4156C", "Agilent4156C\Agilent4156C.csproj", "{888C0D49-51D2-4EB6-91BB-346B31A4C634}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "F", "F\F.csproj", "{5B90B9EF-76A8-4EFF-B6EF-4E7045D642EB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{888C0D49-51D2-4EB6-91BB-346B31A4C634}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{888C0D49-51D2-4EB6-91BB-346B31A4C634}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{888C0D49-51D2-4EB6-91BB-346B31A4C634}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B90B9EF-76A8-4EFF-B6EF-4E7045D642EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B90B9EF-76A8-4EFF-B6EF-4E7045D642EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B90B9EF-76A8-4EFF-B6EF-4E7045D642EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B90B9EF-76A8-4EFF-B6EF-4E7045D642EB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -7,7 +7,7 @@ using Ivi.Visa.Interop;
 
 namespace Automation.Suss100
 {
-    public static class Agilent4156C
+    public static partial class Agilent4156C
     {
 
         [STAThread]
@@ -80,14 +80,14 @@ namespace Automation.Suss100
             DMM.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 10e-13");
             DMM.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 1e-3"); // on 4156C: dec/grid
 
-            foreach (double v in AlternativeRange(0.1, 0.1, endV)) // 100mV step
+            foreach (double v in F.AlternativeRange(0.1, 0.1, endV)) // 100mV step
             {
                 // Measure setup ///////////////////////////////////////////////
                 DMM.WriteString(":PAGE:DISP:SET:GRAP:X:MIN " + -Math.Abs(v));
                 DMM.WriteString(":PAGE:DISP:SET:GRAP:X:MAX " + Math.Abs(v));
                 // Measure /////////////////////////////////////////////////////
                 DMM.WriteString(":PAGE:MEAS:SWE:VAR1:STOP " + v);
-                string initTime = GetTime(); // 2015/07/06 20:13:08
+                string initTime = F.GetTime(); // 2015/07/06 20:13:08
                 DMM.WriteString(":PAGE:SCON:MEAS:APP");
                 //DMM.WriteString(":PAGE:SCON:MEAS:SING");
                 //DMM.WriteString(":PAGE:SCON:MEAS:STOP");
@@ -103,9 +103,9 @@ namespace Automation.Suss100
                 //currents.Add(DMM.ReadString());
                 IStr = DMM.ReadString();
 
-                abort = ZipDetectInf(CommaStringToDoubleArray(VStr),
-                    CommaStringToDoubleArray(IStr), out VI);
-                writeStr = TwoDimDouble2String(VI);
+                abort = F.ZipDetectInf(F.CommaStringToDoubleArray(VStr),
+                    F.CommaStringToDoubleArray(IStr), out VI);
+                writeStr = F.TwoDimDouble2String(VI);
                 writeStr = initTime + "\nV,I\n" + writeStr;
                 filePath = Environment.ExpandEnvironmentVariables("%temp%") +
                     "\\" + initTime + ".txt";
@@ -119,96 +119,17 @@ namespace Automation.Suss100
         }
 
         /// <summary>
+        /// 
         /// </summary>
-        /// <param name="data"></param>
-        /// <example>
-        /// <code>
-        /// Write2DimDouble(
-        ///     new[] { new[] { 1.0, 2, }, new[] { 3.0, 4 } });
-        /// returns "1,2\n3,4"
-        /// </code>
-        /// </example>
-        public static string TwoDimDouble2String(double[][] data)
-        {
-            string joined = "";
-            foreach (double[] item in data)
-            {
-                joined += String.Join(",", item) + "\n";
-            }
-            return joined;
-        }
-
-        /// <summary>
-        /// </summary>
-        /// <returns>Example: "2015-07-06_20-13-08"</returns>
-        /// <remarks>Verified only in Japanese locale.</remarks>
-        public static string GetTime()
-        {
-            string t = DateTime.Now.ToString();
-            // 2015/07/06 20:13:08 --> 2015-07-06_20-13-08
-            return t.Replace(":", "-").Replace("/", "-").Replace(" ", "_");
-        }
-
-        /// <summary>
-        /// CommaStringToDoubleArray("1,2,3e3") --> {1.0, 2.0, 3000.0}
-        /// </summary>
-        /// <param name="s"></param>
+        /// <param name="channels">
+        /// 1: SMU1, 2: SMU2, 3: SMU3, 4: SMU4, 5: VSU1, 6: VSU2, 7: VMU1, 8: VMU2
+        /// </param>
         /// <returns></returns>
-        public static double[] CommaStringToDoubleArray(string s)
+        private static int ChannelSetup(params int[] channels)
         {
-            return Array.ConvertAll(s.Split(','), Double.Parse);
+            throw new NotImplementedException();
+            return 0;
         }
-
-        /// <summary>
-        /// </summary>
-        /// <param name="start"></param>
-        /// <param name="delta"></param>
-        /// <param name="end"></param>
-        /// <returns></returns>
-        /// <example>
-        /// AlternativeRange(1.00, 0.11, 1.55)
-        /// returns {1.00, -1.00, 1.11, -1.11, 1.22, -1.22}
-        /// </example>
-        public static double[] AlternativeRange(double start, double delta, double end)
-        {
-            // TODO: smart way using LINQ?
-            var res = new List<double>();
-            double append = start;
-            while (append <= end)
-            {
-                res.Add(append);
-                res.Add(-append);
-                append += delta;
-            }
-            return res.ToArray();
-        }
-
-        /// <summary>
-        /// Grater than 1e10: Infinite.
-        /// </summary>
-        /// <param name="in1"></param>
-        /// <param name="in2"></param>
-        /// <param name="o"></param>
-        /// <returns></returns>
-        /// <example>
-        /// double[][] o;
-        /// ZipDetectInf(new[] { 1, 1e20, 3 }, new[] { 1.1, 3.3, 800 }, out o);
-        /// returns true (1e20 > 1e10), o = new[][] {{1.0, 1.1}, {3.0, 800.0}}
-        /// </example>
-        public static bool ZipDetectInf(double[] in1, double[] in2, out double[][] o)
-        {
-            bool detectInfinity = false;
-            IEnumerable<double[]> zipped = in1.Zip(in2, (a, b) => new[] { a, b });
-            var zipInfRemoved = new List<double[]>();
-            foreach (double[] pair in zipped)
-            {
-                if (pair[0] > 1e10 || pair[1] > 1e10)
-                    detectInfinity = true;
-                else
-                    zipInfRemoved.Add(pair);
-            }
-            o = zipInfRemoved.ToArray();
-            return detectInfinity;
-        }
+      
     }
 }
