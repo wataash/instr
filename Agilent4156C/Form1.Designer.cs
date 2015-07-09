@@ -1,4 +1,4 @@
-﻿namespace Agilent4156C
+﻿namespace Automation.Suss100
 {
     partial class Form1
     {

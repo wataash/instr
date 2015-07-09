@@ -9,7 +9,7 @@ enum SweepMode
     Single, Double
 }
 
-namespace Agilent4156C
+namespace Automation.Suss100
 {
     public class misc
     {

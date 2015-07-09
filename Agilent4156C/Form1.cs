@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Agilent4156C
+namespace Automation.Suss100
 {
     public partial class Form1 : Form
     {

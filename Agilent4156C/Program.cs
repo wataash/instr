@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Ivi.Visa.Interop;
 
-namespace Agilent4156C
+namespace Automation.Suss100
 {
-    public static class Program
+    public static class Agilent4156C
     {
 
         [STAThread]
