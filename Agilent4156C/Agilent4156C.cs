@@ -55,7 +55,13 @@ namespace Instr
                 ":PAGE:CHAN:SMU1:MODE COMM;FUNC CONS;" +
                 ":PAGE:CHAN:SMU3:VNAM 'V3';" +
                 ":PAGE:CHAN:SMU3:INAM 'I3';" +
-                ":PAGE:CHAN:SMU3:MODE V;FUNC VAR1;");
+                ":PAGE:CHAN:SMU3:MODE V;FUNC CONS;" +
+                
+                ":PAGE:MEAS:sampling parameter/initial interval 50ms and no. of samples 1201" +
+                ":PAGE:MEAS:constant/smu3 src 1mV and conpliance 10mA" +
+                ":DISP:GRAP: x max 60s and y1 as I3 min 0A max 1uA and y2 as I3 scale log min 100e-12 max 1e-3" +
+                "MEAS: integ med" +
+                "MEAS:SING");
         }
 
         public static void SweepMeasurement(FormattedIO488 DMM, double endV,
