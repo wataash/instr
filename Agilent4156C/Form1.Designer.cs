@@ -1,4 +1,4 @@
-﻿namespace Automation.Suss100
+﻿namespace Instr
 {
     partial class Form1
     {

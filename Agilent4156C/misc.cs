@@ -9,7 +9,7 @@ enum SweepMode
     Single, Double
 }
 
-namespace Automation.Suss100
+namespace Instr
 {
     public class misc
     {

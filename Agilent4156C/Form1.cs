@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Automation.Suss100
+namespace Instr
 {
     public partial class Form1 : Form
     {

@@ -6,7 +6,7 @@ using System.Windows.Forms;
 using Ivi.Visa.Interop;
 
 
-namespace Automation.Suss100
+namespace Instr
 {
     public static class Agilent4156C
     {
@@ -23,7 +23,8 @@ namespace Automation.Suss100
             try
             {
                 DMM.IO.Timeout = (int)10 * 60 * 1000; // 10min in [ms]
-                SweepMeasurement(DMM, 500e-3, .1e-3, 10e-3, 1, 3, 10e-6);
+                //SweepMeasurement(DMM, 500e-3, .1e-3, 10e-3, 1, 3, 10e-6);
+                ContactTest(DMM, 100e-3, 20);
             }
             finally
             {
@@ -35,7 +36,26 @@ namespace Automation.Suss100
             //Application.SetCompatibleTextRenderingDefault(false);
             //Application.Run(new Form1());
         }
+        
+        public static void ContactTest(FormattedIO488 io, double timeInterval,
+            double timeEnd)
+        {
+            io.WriteString("*RST");
+            io.WriteString(":PAGE:CHAN:MODE SAMP;"); // not in GPIB mannual damn
 
+            foreach (string unit in new[] { "SMU1", "SMU2", "SMU3", "SMU4",
+                                         "VSU1", "VSU2", "VMU1", "VMU2" })
+            {
+                io.WriteString(":PAGE:CHAN:" + unit + ":DIS");
+            }
+            io.WriteString(
+                ":PAGE:CHAN:SMU1:VNAM 'V1';" +
+                ":PAGE:CHAN:SMU1:INAM 'I1';" +
+                ":PAGE:CHAN:SMU1:MODE COMM;FUNC CONS;" +
+                ":PAGE:CHAN:SMU3:VNAM 'V3';" +
+                ":PAGE:CHAN:SMU3:INAM 'I3';" +
+                ":PAGE:CHAN:SMU3:MODE V;FUNC VAR1;");
+        }
 
         public static void SweepMeasurement(FormattedIO488 DMM, double endV,
             double stepV, double compI, int groundSMU, int sweepSMU,
