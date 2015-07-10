@@ -14,7 +14,6 @@ namespace Instr
         [STAThread]
         static void Main()
         {
-            ChannelSetup(1, 2);
             string VISAResource = "GPIB0::18::INSTR";
             // Agilent
             var RM = new ResourceManager();
@@ -58,22 +57,42 @@ namespace Instr
                 ":PAGE:CHAN:SMU3:MODE V;FUNC CONS;"
                 );
 
-            io.WriteString(":PAGE:MEAS:SAMP:IINT 50m;POIN 1201;");
-            io.WriteString(":PAGE:MEAS:CONS:SMU3 1m;");
-            io.WriteString(":PAGE:MEAS:CONS:SMU3:COMP 10m;");
+            io.WriteString(":PAGE:MEAS:SAMP:IINT 50e-3;POIN 1201;");
+            io.WriteString(":PAGE:MEAS:SAMP:CONS:SMU3 1e-3;");
+            io.WriteString(":PAGE:MEAS:SAMP:CONS:SMU3:COMP 10e-3;");
 
 
-            io.WriteString(":PAGE:DISP:SET:GRAP:X:MIN 0");
-            io.WriteString(":PAGE:DISP:SET:GRAP:X:MAX 60");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN 0");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX 1u");
-            io.WriteString(":PAGE:DISP:GRAP:Y2:NAME I3");
-            io.WriteString(":PAGE:DISP:GRAP:Y2:SCAL LOG");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 100n");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 1m");
+            io.WriteString(":PAGE:DISP:SET:GRAP:X:MIN 0;");
+            io.WriteString(":PAGE:DISP:SET:GRAP:X:MAX 60;");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN 0;");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX 1e-6;");
+            io.WriteString(":PAGE:DISP:GRAP:Y2:NAME 'I3';");
+            io.WriteString(":PAGE:DISP:GRAP:Y2:SCAL LOG;");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 100e-9;");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 1e-3;");
 
+            string initTime = GetTime(); // 2015/07/06 20:13:08
             io.WriteString(":PAGE:MEAS:MSET:ITIM MED;");
             io.WriteString(":PAGE:SCON:SING");
+
+
+            io.WriteString("*OPC?");
+            io.ReadString();
+            io.WriteString(":FORM:DATA ASC;:DATA? '@TIME';");
+            string t = io.ReadString();
+            io.WriteString(":FORM:DATA ASC;:DATA? 'I3';");
+            string i = io.ReadString();
+            double[][] dat;
+            ZipDetectInf(CommaStringToDoubleArray(t),
+                CommaStringToDoubleArray(i), out dat);
+            string writeStr = TwoDimDouble2String(dat);
+            writeStr = initTime + "\nt,I\n" + writeStr;
+            string filePath = Environment.ExpandEnvironmentVariables("%temp%") +
+                "\\" + initTime + ".txt";
+            System.IO.File.WriteAllText(filePath, writeStr);
+            filePath = Environment.ExpandEnvironmentVariables("%temp%") +
+                "\\last.txt";
+            System.IO.File.WriteAllText(filePath, writeStr);
         }
 
         public static void SweepMeasurement(FormattedIO488 DMM, double endV,
