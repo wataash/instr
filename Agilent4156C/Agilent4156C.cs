@@ -22,6 +22,7 @@ namespace Instr
 
             try
             {
+                WriteTest(DMM.);
                 DMM.IO.Timeout = (int)10 * 60 * 1000; // 10min in [ms]
                 SweepMeasurement(DMM, 500e-3, .5e-3, 1e-3, 1, 3, 1e-6);
                 //ContactTest(DMM, 100e-3, 20);
@@ -35,6 +36,20 @@ namespace Instr
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
             //Application.Run(new Form1());
+        }
+
+        private static int Placeholder(Action<string> write, Func<string, string> query) { return 0; }
+        private static int ErrorQ(Action<string> write, Func<string, string> query)
+        {
+            string q;
+            q = query("SYST:ERR?");
+            return 0;
+        }
+
+        private static int WriteTest(Action<string> write)
+        {
+            write("*IDN?");
+            return 0;
         }
 
         public static void ContactTest(FormattedIO488 io, double timeInterval,
@@ -197,8 +212,13 @@ namespace Instr
 
     }
 
-    class VisaCommunicator
-    {
-
-    }
-}
+//    internal class VisaCommunicator // change to public if needed.
+//    {
+//        FormattedIO488 o;
+//        VisaCommunicator(string visa)
+//        {
+//            o = new Ivi.Visa.Interop.FormattedIO488();
+//            o.
+//        }
+//    }
+//}
