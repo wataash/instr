@@ -23,8 +23,8 @@ namespace Instr
             try
             {
                 DMM.IO.Timeout = (int)10 * 60 * 1000; // 10min in [ms]
-                //SweepMeasurement(DMM, 500e-3, .1e-3, 10e-3, 1, 3, 10e-6);
-                ContactTest(DMM, 100e-3, 20);
+                SweepMeasurement(DMM, 500e-3, .5e-3, 1e-3, 1, 3, 1e-6);
+                //ContactTest(DMM, 100e-3, 20);
             }
             finally
             {
@@ -64,12 +64,12 @@ namespace Instr
 
             io.WriteString(":PAGE:DISP:SET:GRAP:X:MIN 0;");
             io.WriteString(":PAGE:DISP:SET:GRAP:X:MAX 60;");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN 0;");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX 1e-6;");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN 3e-5;");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX 4e-5;");
             io.WriteString(":PAGE:DISP:GRAP:Y2:NAME 'I3';");
             io.WriteString(":PAGE:DISP:GRAP:Y2:SCAL LOG;");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 100e-9;");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 1e-3;");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 1e-12;"); // 1 Gohm at 1mV
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 100e-6;"); // 10 ohm at 1mV
 
             string initTime = GetTime(); // 2015/07/06 20:13:08
             io.WriteString(":PAGE:MEAS:MSET:ITIM MED;");
