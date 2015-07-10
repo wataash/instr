@@ -14,7 +14,7 @@ namespace Instr
         [STAThread]
         static void Main()
         {
-            ChannelSetup(1,2);
+            ChannelSetup(1, 2);
             string VISAResource = "GPIB0::18::INSTR";
             // Agilent
             var RM = new ResourceManager();
@@ -37,7 +37,7 @@ namespace Instr
             //Application.SetCompatibleTextRenderingDefault(false);
             //Application.Run(new Form1());
         }
-        
+
         public static void ContactTest(FormattedIO488 io, double timeInterval,
             double timeEnd)
         {
@@ -55,13 +55,25 @@ namespace Instr
                 ":PAGE:CHAN:SMU1:MODE COMM;FUNC CONS;" +
                 ":PAGE:CHAN:SMU3:VNAM 'V3';" +
                 ":PAGE:CHAN:SMU3:INAM 'I3';" +
-                ":PAGE:CHAN:SMU3:MODE V;FUNC CONS;" +
-                
-                ":PAGE:MEAS:sampling parameter/initial interval 50ms and no. of samples 1201" +
-                ":PAGE:MEAS:constant/smu3 src 1mV and conpliance 10mA" +
-                ":DISP:GRAP: x max 60s and y1 as I3 min 0A max 1uA and y2 as I3 scale log min 100e-12 max 1e-3" +
-                "MEAS: integ med" +
-                "MEAS:SING");
+                ":PAGE:CHAN:SMU3:MODE V;FUNC CONS;"
+                );
+
+            io.WriteString(":PAGE:MEAS:SAMP:IINT 50m;POIN 1201;");
+            io.WriteString(":PAGE:MEAS:CONS:SMU3 1m;");
+            io.WriteString(":PAGE:MEAS:CONS:SMU3:COMP 10m;");
+
+
+            io.WriteString(":PAGE:DISP:SET:GRAP:X:MIN 0");
+            io.WriteString(":PAGE:DISP:SET:GRAP:X:MAX 60");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN 0");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX 1u");
+            io.WriteString(":PAGE:DISP:GRAP:Y2:NAME I3");
+            io.WriteString(":PAGE:DISP:GRAP:Y2:SCAL LOG");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 100n");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 1m");
+
+            io.WriteString(":PAGE:MEAS:MSET:ITIM MED;");
+            io.WriteString(":PAGE:SCON:SING");
         }
 
         public static void SweepMeasurement(FormattedIO488 DMM, double endV,
@@ -155,7 +167,7 @@ namespace Instr
         /// <returns></returns>
         private static int ChannelSetup(params int[] channels)
         {
-            
+
             // if elem in channels
             // TODO: enum, ChannelSetup in another proj.
             throw new NotImplementedException();
