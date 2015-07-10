@@ -7,7 +7,7 @@ enum Unit
 }
 namespace Instr
 {
-    public static class F
+    public static class Function
     {
         public static void Main() { }
 

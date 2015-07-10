@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Ivi.Visa.Interop;
+using static Instr.Function;
 
 
 namespace Instr
@@ -101,14 +102,14 @@ namespace Instr
             DMM.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 10e-13");
             DMM.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 1e-3"); // on 4156C: dec/grid
 
-            foreach (double v in F.AlternativeRange(0.1, 0.1, endV)) // 100mV step
+            foreach (double v in AlternativeRange(0.1, 0.1, endV)) // 100mV step
             {
                 // Measure setup ///////////////////////////////////////////////
                 DMM.WriteString(":PAGE:DISP:SET:GRAP:X:MIN " + -Math.Abs(v));
                 DMM.WriteString(":PAGE:DISP:SET:GRAP:X:MAX " + Math.Abs(v));
                 // Measure /////////////////////////////////////////////////////
                 DMM.WriteString(":PAGE:MEAS:SWE:VAR1:STOP " + v);
-                string initTime = F.GetTime(); // 2015/07/06 20:13:08
+                string initTime = GetTime(); // 2015/07/06 20:13:08
                 DMM.WriteString(":PAGE:SCON:MEAS:APP");
                 //DMM.WriteString(":PAGE:SCON:MEAS:SING");
                 //DMM.WriteString(":PAGE:SCON:MEAS:STOP");
@@ -124,9 +125,9 @@ namespace Instr
                 //currents.Add(DMM.ReadString());
                 IStr = DMM.ReadString();
 
-                abort = F.ZipDetectInf(F.CommaStringToDoubleArray(VStr),
-                    F.CommaStringToDoubleArray(IStr), out VI);
-                writeStr = F.TwoDimDouble2String(VI);
+                abort = ZipDetectInf(CommaStringToDoubleArray(VStr),
+                    CommaStringToDoubleArray(IStr), out VI);
+                writeStr = TwoDimDouble2String(VI);
                 writeStr = initTime + "\nV,I\n" + writeStr;
                 filePath = Environment.ExpandEnvironmentVariables("%temp%") +
                     "\\" + initTime + ".txt";
