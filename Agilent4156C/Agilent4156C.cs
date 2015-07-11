@@ -1,58 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using Ivi.Visa.Interop;
 using static Instr.Function;
 
-
 namespace Instr
 {
-
-
     public static class Agilent4156C
     {
         [STAThread]
         static void Main()
         {
-            var a = new AgilentVisaCommunicator("a");
             string VISAResource = "GPIB0::18::INSTR";
             // Agilent
-            var RM = new ResourceManager();
-            var DMM = new FormattedIO488();
-            DMM.IO = (IMessage)RM.Open(VISAResource);
-            WriteTest((s) => DMM.WriteString(s));
+            var rm = new ResourceManager();
+            var dmm = new FormattedIO488();
+            dmm.IO = (IMessage)rm.Open(VISAResource);
 
             try
             {
-                DMM.IO.Timeout = (int)10 * 60 * 1000; // 10min in [ms]
-                SweepMeasurement(DMM, 500e-3, .5e-3, 1e-3, 1, 3, 1e-6);
-                //ContactTest(DMM, 100e-3, 20);
+                dmm.IO.Timeout = (int)10 * 60 * 1000; // 10min in [ms]
+                SweepMeasurement(dmm, 500e-3, .5e-3, 1e-3, 1, 3, 1e-6);
+                //ContactTest(dmm, 100e-3, 20);
             }
             finally
             {
-                DMM.IO.Close();
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(DMM);
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(RM);
+                dmm.IO.Close();
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(dmm);
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(rm);
             }
-            //Application.EnableVisualStyles();
-            //Application.SetCompatibleTextRenderingDefault(false);
-            //Application.Run(new Form1());
         }
 
-        private static int Placeholder(Action<string> write, Func<string, string> query) { return 0; }
-        private static int ErrorQ(Action<string> write, Func<string, string> query)
+        private static string ErrorQ(IVisaCommunicator visa)
         {
-            string q;
-            q = query("SYST:ERR?");
-            return 0;
-        }
-
-        private static int WriteTest(Action<string> write)
-        {
-            write("*IDN?");
-            return 0;
+            return visa.Query("SYST:ERR?");
         }
 
         public static void ContactTest(FormattedIO488 io, double timeInterval,
@@ -113,7 +93,7 @@ namespace Instr
             System.IO.File.WriteAllText(filePath, writeStr);
         }
 
-        public static void SweepMeasurement(FormattedIO488 DMM, double endV,
+        public static void SweepMeasurement(FormattedIO488 io, double endV,
             double stepV, double compI, int groundSMU, int sweepSMU,
             double yMax)
         {
@@ -124,7 +104,7 @@ namespace Instr
             var timeStamps = new List<string>();
             var voltages = new List<string>();
             var currents = new List<string>();
-            DMM.WriteString("*RST");
+            io.WriteString("*RST");
 
             // Channel settings ////////////////////////////////////////////////
             // TODO: Integration time, Hold time, Deley time
@@ -132,9 +112,9 @@ namespace Instr
             foreach (string unit in new[] { "SMU1", "SMU2", "SMU3", "SMU4",
                                          "VSU1", "VSU2", "VMU1", "VMU2" })
             {
-                DMM.WriteString(":PAGE:CHAN:" + unit + ":DIS");
+                io.WriteString(":PAGE:CHAN:" + unit + ":DIS");
             }
-            DMM.WriteString(
+            io.WriteString(
                 ":PAGE:CHAN:SMU" + groundSMU + ":VNAM 'V" + groundSMU + "';" +
                 ":PAGE:CHAN:SMU" + groundSMU + ":INAM 'I" + groundSMU + "';" +
                 ":PAGE:CHAN:SMU" + groundSMU + ":MODE COMM;FUNC CONS;" +
@@ -143,42 +123,42 @@ namespace Instr
                 ":PAGE:CHAN:SMU" + sweepSMU + ":MODE V;FUNC VAR1;");
 
             // Measurement setup ///////////////////////////////////////////////
-            DMM.WriteString(":PAGE:MEAS:SWE:VAR1:STAR 0");
-            DMM.WriteString(":PAGE:MEAS:VAR1:STOP 0.1;");
-            DMM.WriteString(":PAGE:CHAN:UFUN:DEF 'ABSI','A','ABS(I" + sweepSMU + ")'");
-            DMM.WriteString("PAGE:DISP:GRAP:Y2:NAME 'ABSI'");
+            io.WriteString(":PAGE:MEAS:SWE:VAR1:STAR 0");
+            io.WriteString(":PAGE:MEAS:VAR1:STOP 0.1;");
+            io.WriteString(":PAGE:CHAN:UFUN:DEF 'ABSI','A','ABS(I" + sweepSMU + ")'");
+            io.WriteString("PAGE:DISP:GRAP:Y2:NAME 'ABSI'");
             // Without below line, error on :PAGE:DISP:SET:GRAP:Y1
-            DMM.WriteString(":PAGE:MEAS:VAR1:STEP " + stepV + ";");
-            DMM.WriteString(":PAGE:MEAS:VAR1:MODE DOUB;");
+            io.WriteString(":PAGE:MEAS:VAR1:STEP " + stepV + ";");
+            io.WriteString(":PAGE:MEAS:VAR1:MODE DOUB;");
             // TODO: move to another place
-            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN " + -yMax);
-            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX " + yMax);
-            DMM.WriteString(":PAGE:DISP:GRAP:Y2:SCAL LOG");
-            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 10e-13");
-            DMM.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 1e-3"); // on 4156C: dec/grid
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN " + -yMax);
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX " + yMax);
+            io.WriteString(":PAGE:DISP:GRAP:Y2:SCAL LOG");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 10e-13");
+            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 1e-3"); // on 4156C: dec/grid
 
             foreach (double v in AlternativeRange(0.1, 0.1, endV)) // 100mV step
             {
                 // Measure setup ///////////////////////////////////////////////
-                DMM.WriteString(":PAGE:DISP:SET:GRAP:X:MIN " + -Math.Abs(v));
-                DMM.WriteString(":PAGE:DISP:SET:GRAP:X:MAX " + Math.Abs(v));
+                io.WriteString(":PAGE:DISP:SET:GRAP:X:MIN " + -Math.Abs(v));
+                io.WriteString(":PAGE:DISP:SET:GRAP:X:MAX " + Math.Abs(v));
                 // Measure /////////////////////////////////////////////////////
-                DMM.WriteString(":PAGE:MEAS:SWE:VAR1:STOP " + v);
+                io.WriteString(":PAGE:MEAS:SWE:VAR1:STOP " + v);
                 string initTime = GetTime(); // 2015/07/06 20:13:08
-                DMM.WriteString(":PAGE:SCON:MEAS:APP");
-                //DMM.WriteString(":PAGE:SCON:MEAS:SING");
-                //DMM.WriteString(":PAGE:SCON:MEAS:STOP");
-                DMM.WriteString("*OPC?");
-                DMM.ReadString();
+                io.WriteString(":PAGE:SCON:MEAS:APP");
+                //dmm.WriteString(":PAGE:SCON:MEAS:SING");
+                //dmm.WriteString(":PAGE:SCON:MEAS:STOP");
+                io.WriteString("*OPC?");
+                io.ReadString();
                 // Acuire and save data ////////////////////////////////////////
-                //DMM.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'V2';");
-                DMM.WriteString(":FORM:DATA ASC;:DATA? 'V" + sweepSMU + "';");
-                //voltages.Add(DMM.ReadString());
-                VStr = DMM.ReadString();
-                //DMM.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'I2';");
-                DMM.WriteString(":FORM:DATA ASC;:DATA? 'I" + sweepSMU + "';");
-                //currents.Add(DMM.ReadString());
-                IStr = DMM.ReadString();
+                //dmm.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'V2';");
+                io.WriteString(":FORM:DATA ASC;:DATA? 'V" + sweepSMU + "';");
+                //voltages.Add(dmm.ReadString());
+                VStr = io.ReadString();
+                //dmm.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'I2';");
+                io.WriteString(":FORM:DATA ASC;:DATA? 'I" + sweepSMU + "';");
+                //currents.Add(dmm.ReadString());
+                IStr = io.ReadString();
 
                 abort = ZipDetectInf(CommaStringToDoubleArray(VStr),
                     CommaStringToDoubleArray(IStr), out VI);
@@ -213,8 +193,4 @@ namespace Instr
         }
 
     }
-
-
-
 }
-

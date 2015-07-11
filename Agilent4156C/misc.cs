@@ -39,6 +39,7 @@ namespace Instr
             //    Console.WriteLine(exp.Message);
             //}  
         }
+
         public static void SweepMeasurement(MessageBasedSession mbSession,
             double endV, double stepV, double compI, int groundSMU, int biasSMU)
         {
@@ -88,130 +89,6 @@ namespace Instr
                 v += 0.1;
             }
         }
+
     }
 }
-
-//// Level 3 /////////////////////////////////////////////////////////////
-//static void Initialize(MessageBasedSession mbSession)
-//{
-//    DefaultInstrumentSetup(mbSession);
-//    string q = ErrorQuery(mbSession);
-//    MessageBox.Show(q); // if not error not msgbox
-//}
-
-//public static void ConfigureMeasurementMode(
-//    MessageBasedSession mbSession, int measurementMode)
-//{
-//    string modeString;
-//    switch (measurementMode)
-//    {
-//        case 0:
-//            modeString = ":PAGE:CHAN:MODE SWE;";
-//            break;
-//        case 1:
-//            modeString = ":PAGE:CHAN:MODE SAMP;";
-//            break;
-//        case 2:
-//            modeString = ":PAGE:CHAN:MODE QSCV;";
-//            break;
-//        default:
-//            MessageBox.Show("mode must be 0, 1 or 2");
-//            modeString = ":PAGE:CHAN:MODE SWE;";
-//            break;
-//    }
-//    mbSession.Write(modeString);
-//    ErrorQuery(mbSession);
-//}
-
-//public static void ConfigurePrimarySweepMeasurement(
-//    MessageBasedSession mbSession, int sweepMode, double compliance,
-//    double powerCompliance, double startV, double stopV,
-//    int sweepStaircaseType, double stepV)
-//{
-//    string writeStr = "";
-//    switch (sweepMode)
-//    {
-//        case 0:
-//            writeStr += ":PAGE:MEAS:VAR1:MODE SING;";
-//            break;
-//        case 1:
-//            writeStr += ":PAGE:MEAS:VAR1:MODE DOUB;";
-//            break;
-//        default:
-//            MessageBox.Show("sweep mode 0 or 1");
-//            break;
-//    }
-//    // double tostr?
-//    writeStr += ":PAGE:MEAS:VAR1:COMP " + compliance + ";";
-//    switch (sweepStaircaseType)
-//    {
-//        case 0:
-//            writeStr += ":PAGE:MEAS:VAR1:SPAC LIN;";
-//            break;
-//        case 1:
-//            writeStr += ":PAGE:MEAS:VAR1:SPAC L10;";
-//            break;
-//        case 2:
-//            writeStr += ":PAGE:MEAS:VAR1:SPAC L25;";
-//            break;
-//        case 3:
-//            writeStr += ":PAGE:MEAS:VAR1:SPAC L50;";
-//            break;
-//        default:
-//            MessageBox.Show("err");
-//            break;
-//    }
-//    writeStr += ":PAGE:MEAS:VAR1:STAR " + startV + ";";
-//    writeStr += ":PAGE:MEAS:VAR1:STOP " + stopV + ";";
-//    writeStr += ":PAGE:MEAS:VAR1:STEP " + stepV + ";";
-//    mbSession.Write(writeStr);
-//    ErrorQuery(mbSession);
-//}
-
-//public static void ConfigureSubordinateSweepMeasurement(
-//    MessageBasedSession mbSession, double compliance,
-//    bool onPowerCompliance, double powerCompliance, int numSteps,
-//    double step, double start)
-//{
-
-//}
-
-//public static void ConfugreIntegrationTime(int NPLC, int integTimeMode,
-//    double shortIntegrationTime)
-//{
-
-//}
-
-//public static double[] ReadTraceData(
-//    MessageBasedSession mbSession, int timeout, string variableName)
-//{
-//    return new[] { 0.0, 0.0 };
-//}
-//public static void WaitForAcquisitionComplete(int timeoutMilliSec)
-//{
-
-//}
-
-
-//// Level 2 /////////////////////////////////////////////////////////////
-//static void Reset(MessageBasedSession mbSession)
-//{
-//    mbSession.Write("*RST");
-//    DefaultInstrumentSetup(mbSession);
-//}
-//// Level 1 /////////////////////////////////////////////////////////////
-//static void DefaultInstrumentSetup(MessageBasedSession mbSession)
-//{
-//    // *ESE 60 - enables command, execution, query, and device errors
-//    // in event status register
-//    // *SRE 48 - enables message available, standard event bits in the
-//    // status byte
-//    // * CLS - clears status
-//    mbSession.Write("*ESE 60;*SRE 48;*CLS;");
-//}
-//static string ErrorQuery(MessageBasedSession mbSession)
-//{
-//    mbSession.Write(":SYST:ERR?");
-//    //mbSession.Query()
-//    return mbSession.ReadString(256);
-//}
