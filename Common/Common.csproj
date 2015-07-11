@@ -7,8 +7,8 @@
     <ProjectGuid>{5B90B9EF-76A8-4EFF-B6EF-4E7045D642EB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Automation.Suss100</RootNamespace>
-    <AssemblyName>F</AssemblyName>
+    <RootNamespace>Instr</RootNamespace>
+    <AssemblyName>Common</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <PublishUrl>publish\</PublishUrl>
