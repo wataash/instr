@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Ivi.Visa.Interop;
-using static Instr.Function;
+using static Instr.Functions;
 
 namespace Instr
 {
