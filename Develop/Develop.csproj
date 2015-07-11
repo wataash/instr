@@ -53,6 +53,10 @@
       <Project>{888c0d49-51d2-4eb6-91bb-346b31a4c634}</Project>
       <Name>Agilent4156C</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{5b90b9ef-76a8-4eff-b6ef-4e7045d642eb}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
