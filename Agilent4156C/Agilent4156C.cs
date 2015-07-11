@@ -1,52 +1,27 @@
 ﻿using System;
-using System.Collections.Generic;
-using Ivi.Visa.Interop;
 using static Instr.Functions;
 
 namespace Instr
 {
     public static class Agilent4156C
     {
-        [STAThread]
-        static void Main()
-        {
-            string VISAResource = "GPIB0::18::INSTR";
-            // Agilent
-            var rm = new ResourceManager();
-            var dmm = new FormattedIO488();
-            dmm.IO = (IMessage)rm.Open(VISAResource);
-
-            try
-            {
-                dmm.IO.Timeout = (int)10 * 60 * 1000; // 10min in [ms]
-                SweepMeasurement(dmm, 500e-3, .5e-3, 1e-3, 1, 3, 1e-6);
-                //ContactTest(dmm, 100e-3, 20);
-            }
-            finally
-            {
-                dmm.IO.Close();
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(dmm);
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(rm);
-            }
-        }
-
         private static string ErrorQ(IVisaCommunicator visa)
         {
             return visa.Query("SYST:ERR?");
         }
 
-        public static void ContactTest(FormattedIO488 io, double timeInterval,
+        public static void ContactTest(IVisaCommunicator visa, double timeInterval,
             double timeEnd)
         {
-            io.WriteString("*RST");
-            io.WriteString(":PAGE:CHAN:MODE SAMP;"); // not in GPIB mannual damn
+            visa.Write("*RST");
+            visa.Write(":PAGE:CHAN:MODE SAMP;"); // not in GPIB mannual damn
 
             foreach (string unit in new[] { "SMU1", "SMU2", "SMU3", "SMU4",
                                          "VSU1", "VSU2", "VMU1", "VMU2" })
             {
-                io.WriteString(":PAGE:CHAN:" + unit + ":DIS");
+                visa.Write(":PAGE:CHAN:" + unit + ":DIS");
             }
-            io.WriteString(
+            visa.Write(
                 ":PAGE:CHAN:SMU1:VNAM 'V1';" +
                 ":PAGE:CHAN:SMU1:INAM 'I1';" +
                 ":PAGE:CHAN:SMU1:MODE COMM;FUNC CONS;" +
@@ -55,31 +30,28 @@ namespace Instr
                 ":PAGE:CHAN:SMU3:MODE V;FUNC CONS;"
                 );
 
-            io.WriteString(":PAGE:MEAS:SAMP:IINT 50e-3;POIN 1201;");
-            io.WriteString(":PAGE:MEAS:SAMP:CONS:SMU3 1e-3;");
-            io.WriteString(":PAGE:MEAS:SAMP:CONS:SMU3:COMP 10e-3;");
+            visa.Write(":PAGE:MEAS:SAMP:IINT 50e-3;POIN 1201;");
+            visa.Write(":PAGE:MEAS:SAMP:CONS:SMU3 1e-3;");
+            visa.Write(":PAGE:MEAS:SAMP:CONS:SMU3:COMP 10e-3;");
 
 
-            io.WriteString(":PAGE:DISP:SET:GRAP:X:MIN 0;");
-            io.WriteString(":PAGE:DISP:SET:GRAP:X:MAX 60;");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN 3e-5;");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX 4e-5;");
-            io.WriteString(":PAGE:DISP:GRAP:Y2:NAME 'I3';");
-            io.WriteString(":PAGE:DISP:GRAP:Y2:SCAL LOG;");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 1e-12;"); // 1 Gohm at 1mV
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 100e-6;"); // 10 ohm at 1mV
+            visa.Write(":PAGE:DISP:SET:GRAP:X:MIN 0;");
+            visa.Write(":PAGE:DISP:SET:GRAP:X:MAX 60;");
+            visa.Write(":PAGE:DISP:SET:GRAP:Y1:MIN 3e-5;");
+            visa.Write(":PAGE:DISP:SET:GRAP:Y1:MAX 4e-5;");
+            visa.Write(":PAGE:DISP:GRAP:Y2:NAME 'I3';");
+            visa.Write(":PAGE:DISP:GRAP:Y2:SCAL LOG;");
+            visa.Write(":PAGE:DISP:SET:GRAP:Y2:MIN 1e-12;"); // 1 Gohm at 1mV
+            visa.Write(":PAGE:DISP:SET:GRAP:Y2:MAX 100e-6;"); // 10 ohm at 1mV
 
             string initTime = GetTime(); // 2015/07/06 20:13:08
-            io.WriteString(":PAGE:MEAS:MSET:ITIM MED;");
-            io.WriteString(":PAGE:SCON:SING");
+            visa.Write(":PAGE:MEAS:MSET:ITIM MED;");
+            visa.Write(":PAGE:SCON:SING");
 
 
-            io.WriteString("*OPC?");
-            io.ReadString();
-            io.WriteString(":FORM:DATA ASC;:DATA? '@TIME';");
-            string t = io.ReadString();
-            io.WriteString(":FORM:DATA ASC;:DATA? 'I3';");
-            string i = io.ReadString();
+            visa.Query("*OPC?");
+            string t = visa.Query(":FORM:DATA ASC;:DATA? '@TIME';");
+            string i = visa.Query(":FORM:DATA ASC;:DATA? 'I3';");
             double[][] dat;
             ZipDetectInf(CommaStringToDoubleArray(t),
                 CommaStringToDoubleArray(i), out dat);
@@ -93,7 +65,7 @@ namespace Instr
             System.IO.File.WriteAllText(filePath, writeStr);
         }
 
-        public static void SweepMeasurement(FormattedIO488 io, double endV,
+        public static void SweepMeasurement(IVisaCommunicator visa, double endV,
             double stepV, double compI, int groundSMU, int sweepSMU,
             double yMax)
         {
@@ -101,10 +73,7 @@ namespace Instr
             string VStr, IStr, filePath, writeStr;
             double[][] VI;
             bool abort;
-            var timeStamps = new List<string>();
-            var voltages = new List<string>();
-            var currents = new List<string>();
-            io.WriteString("*RST");
+            visa.Write("*RST");
 
             // Channel settings ////////////////////////////////////////////////
             // TODO: Integration time, Hold time, Deley time
@@ -112,9 +81,9 @@ namespace Instr
             foreach (string unit in new[] { "SMU1", "SMU2", "SMU3", "SMU4",
                                          "VSU1", "VSU2", "VMU1", "VMU2" })
             {
-                io.WriteString(":PAGE:CHAN:" + unit + ":DIS");
+                visa.Write(":PAGE:CHAN:" + unit + ":DIS");
             }
-            io.WriteString(
+            visa.Write(
                 ":PAGE:CHAN:SMU" + groundSMU + ":VNAM 'V" + groundSMU + "';" +
                 ":PAGE:CHAN:SMU" + groundSMU + ":INAM 'I" + groundSMU + "';" +
                 ":PAGE:CHAN:SMU" + groundSMU + ":MODE COMM;FUNC CONS;" +
@@ -123,42 +92,36 @@ namespace Instr
                 ":PAGE:CHAN:SMU" + sweepSMU + ":MODE V;FUNC VAR1;");
 
             // Measurement setup ///////////////////////////////////////////////
-            io.WriteString(":PAGE:MEAS:SWE:VAR1:STAR 0");
-            io.WriteString(":PAGE:MEAS:VAR1:STOP 0.1;");
-            io.WriteString(":PAGE:CHAN:UFUN:DEF 'ABSI','A','ABS(I" + sweepSMU + ")'");
-            io.WriteString("PAGE:DISP:GRAP:Y2:NAME 'ABSI'");
+            visa.Write(":PAGE:MEAS:SWE:VAR1:STAR 0");
+            visa.Write(":PAGE:MEAS:VAR1:STOP 0.1;");
+            visa.Write(":PAGE:CHAN:UFUN:DEF 'ABSI','A','ABS(I" + sweepSMU + ")'");
+            visa.Write("PAGE:DISP:GRAP:Y2:NAME 'ABSI'");
             // Without below line, error on :PAGE:DISP:SET:GRAP:Y1
-            io.WriteString(":PAGE:MEAS:VAR1:STEP " + stepV + ";");
-            io.WriteString(":PAGE:MEAS:VAR1:MODE DOUB;");
+            visa.Write(":PAGE:MEAS:VAR1:STEP " + stepV + ";");
+            visa.Write(":PAGE:MEAS:VAR1:MODE DOUB;");
             // TODO: move to another place
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MIN " + -yMax);
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y1:MAX " + yMax);
-            io.WriteString(":PAGE:DISP:GRAP:Y2:SCAL LOG");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MIN 10e-13");
-            io.WriteString(":PAGE:DISP:SET:GRAP:Y2:MAX 1e-3"); // on 4156C: dec/grid
+            visa.Write(":PAGE:DISP:SET:GRAP:Y1:MIN " + -yMax);
+            visa.Write(":PAGE:DISP:SET:GRAP:Y1:MAX " + yMax);
+            visa.Write(":PAGE:DISP:GRAP:Y2:SCAL LOG");
+            visa.Write(":PAGE:DISP:SET:GRAP:Y2:MIN 10e-13");
+            visa.Write(":PAGE:DISP:SET:GRAP:Y2:MAX 1e-3"); // on 4156C: dec/grid
 
             foreach (double v in AlternativeRange(0.1, 0.1, endV)) // 100mV step
             {
                 // Measure setup ///////////////////////////////////////////////
-                io.WriteString(":PAGE:DISP:SET:GRAP:X:MIN " + -Math.Abs(v));
-                io.WriteString(":PAGE:DISP:SET:GRAP:X:MAX " + Math.Abs(v));
+                visa.Write(":PAGE:DISP:SET:GRAP:X:MIN " + -Math.Abs(v));
+                visa.Write(":PAGE:DISP:SET:GRAP:X:MAX " + Math.Abs(v));
                 // Measure /////////////////////////////////////////////////////
-                io.WriteString(":PAGE:MEAS:SWE:VAR1:STOP " + v);
+                visa.Write(":PAGE:MEAS:SWE:VAR1:STOP " + v);
                 string initTime = GetTime(); // 2015/07/06 20:13:08
-                io.WriteString(":PAGE:SCON:MEAS:APP");
+                visa.Write(":PAGE:SCON:MEAS:APP");
                 //dmm.WriteString(":PAGE:SCON:MEAS:SING");
                 //dmm.WriteString(":PAGE:SCON:MEAS:STOP");
-                io.WriteString("*OPC?");
-                io.ReadString();
+                visa.Query("*OPC?");
                 // Acuire and save data ////////////////////////////////////////
                 //dmm.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'V2';");
-                io.WriteString(":FORM:DATA ASC;:DATA? 'V" + sweepSMU + "';");
-                //voltages.Add(dmm.ReadString());
-                VStr = io.ReadString();
-                //dmm.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'I2';");
-                io.WriteString(":FORM:DATA ASC;:DATA? 'I" + sweepSMU + "';");
-                //currents.Add(dmm.ReadString());
-                IStr = io.ReadString();
+                VStr = visa.Query(":FORM:DATA ASC;:DATA? 'V" + sweepSMU + "';");
+                IStr = visa.Query(":FORM:DATA ASC;:DATA? 'I" + sweepSMU + "';");
 
                 abort = ZipDetectInf(CommaStringToDoubleArray(VStr),
                     CommaStringToDoubleArray(IStr), out VI);

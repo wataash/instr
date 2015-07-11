@@ -7,6 +7,7 @@ namespace Instr
         string Read();
         void Write(string writeText);
         string Query(string writeText);
+        void SetTimeout(double second);
     }
 
     // Example for Agilent 82357A
@@ -31,6 +32,7 @@ namespace Instr
             System.Runtime.InteropServices.Marshal.ReleaseComObject(io);
             System.Runtime.InteropServices.Marshal.ReleaseComObject(rm);
         }
+
         public string Read()
         {
             return io.ReadString();
@@ -43,6 +45,10 @@ namespace Instr
         public void Write(string writeText)
         {
             io.WriteString(writeText);
+        }
+        public void SetTimeout(double second)
+        {
+            io.IO.Timeout = (int)(second * 1000); // millisecond
         }
     }
 
@@ -57,6 +63,10 @@ namespace Instr
             throw new NotImplementedException();
         }
         public string Query(string writeText)
+        {
+            throw new NotImplementedException();
+        }
+        public void SetTimeout(double second)
         {
             throw new NotImplementedException();
         }

@@ -1,4 +1,5 @@
 ﻿using NationalInstruments.VisaNS;
+
 enum SweepStaircaseType
 {
     Linear, Log10, Log25, Log50
