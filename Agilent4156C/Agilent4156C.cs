@@ -9,20 +9,23 @@ using static Instr.Function;
 
 namespace Instr
 {
+
+
     public static class Agilent4156C
     {
         [STAThread]
         static void Main()
         {
+            var a = new AgilentVisaCommunicator("a");
             string VISAResource = "GPIB0::18::INSTR";
             // Agilent
             var RM = new ResourceManager();
             var DMM = new FormattedIO488();
             DMM.IO = (IMessage)RM.Open(VISAResource);
+            WriteTest((s) => DMM.WriteString(s));
 
             try
             {
-                WriteTest(DMM.);
                 DMM.IO.Timeout = (int)10 * 60 * 1000; // 10min in [ms]
                 SweepMeasurement(DMM, 500e-3, .5e-3, 1e-3, 1, 3, 1e-6);
                 //ContactTest(DMM, 100e-3, 20);
@@ -209,16 +212,9 @@ namespace Instr
 
         }
 
-
     }
 
-//    internal class VisaCommunicator // change to public if needed.
-//    {
-//        FormattedIO488 o;
-//        VisaCommunicator(string visa)
-//        {
-//            o = new Ivi.Visa.Interop.FormattedIO488();
-//            o.
-//        }
-//    }
-//}
+
+
+}
+

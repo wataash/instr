@@ -9,8 +9,6 @@ namespace Instr
 {
     public static class Function
     {
-        public static void Main() { }
-
         /// <summary>
         /// </summary>
         /// <param name="data"></param>
