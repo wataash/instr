@@ -13,7 +13,11 @@ namespace Instr
             this.useUSCommands = useUSCommands;
         }
 
-        public void ContactTest(double timeInterval, double timeEnd)
+        public double[][] ContactTest(
+            int groundSmu, int biasSmu,
+            double timeInterval = 50e-3, int points = 10001,
+            double voltage = 1e-3, double compliance = 10e-3)
+        // TODO: order in the displayed order on 4156C
         {
             Write("*RST");
             if (useUSCommands)
@@ -21,107 +25,96 @@ namespace Instr
             else
                 Write(":PAGE:CHAN:MODE SAMP;"); // not in GPIB mannual damn
 
-            DisableAllUnits(1, 3);
-            ConfugureSmu(1, 3, 3);
-            ConfugureSmu(3, 1, 3);
+            DisableAllUnits(groundSmu, biasSmu);
+            ConfugureSmu(groundSmu, 3, 3);
+            ConfugureSmu(biasSmu, 1, 3);
 
-            Write(":PAGE:MEAS:SAMP:IINT 50e-3;POIN 1201;");
-            Write(":PAGE:MEAS:SAMP:CONS:SMU3 1e-3;");
-            Write(":PAGE:MEAS:SAMP:CONS:SMU3:COMP 10e-3;");
+            if (useUSCommands)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                Write($":PAGE:MEAS:SAMP:IINT {timeInterval};POIN {points};");
+                Write($":PAGE:MEAS:SAMP:CONS:SMU{biasSmu} {voltage};");
+                Write($":PAGE:MEAS:SAMP:CONS:SMU{biasSmu}:COMP {compliance};");
+            }
 
+            SetY2($"I{biasSmu}", true);
+            ConfigureDisplay(0, 60, 3e-5, 4e-5, 1e-12, 100e-6); // 1 Gohm, 10 ohm at 1mV
 
-            Write(":PAGE:DISP:SET:GRAP:X:MIN 0;");
-            Write(":PAGE:DISP:SET:GRAP:X:MAX 60;");
-            Write(":PAGE:DISP:SET:GRAP:Y1:MIN 3e-5;");
-            Write(":PAGE:DISP:SET:GRAP:Y1:MAX 4e-5;");
-            Write(":PAGE:DISP:GRAP:Y2:NAME 'I3';");
-            Write(":PAGE:DISP:GRAP:Y2:SCAL LOG;");
-            Write(":PAGE:DISP:SET:GRAP:Y2:MIN 1e-12;"); // 1 Gohm at 1mV
-            Write(":PAGE:DISP:SET:GRAP:Y2:MAX 100e-6;"); // 10 ohm at 1mV
-
-            string initTime = GetTime(); // 2015/07/06 20:13:08
-            Write(":PAGE:MEAS:MSET:ITIM MED;");
-            Write(":PAGE:SCON:SING");
-
+            if (useUSCommands)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                Write(":PAGE:MEAS:MSET:ITIM MED;");
+                Write(":PAGE:SCON:SING");
+            }
 
             Query("*OPC?");
-            string t = Query(":FORM:DATA ASC;:DATA? '@TIME';");
-            string i = Query(":FORM:DATA ASC;:DATA? 'I3';");
-            double[][] dat;
-            ZipDetectInf(CommaStringToDoubleArray(t),
-                CommaStringToDoubleArray(i), out dat);
-            string writeStr = TwoDimDouble2String(dat);
-            writeStr = initTime + "\nt,I\n" + writeStr;
-            string filePath = Environment.ExpandEnvironmentVariables("%temp%") +
-                "\\" + initTime + ".txt";
-            System.IO.File.WriteAllText(filePath, writeStr);
-            filePath = Environment.ExpandEnvironmentVariables("%temp%") +
-                "\\last.txt";
-            System.IO.File.WriteAllText(filePath, writeStr);
+            string times, currents;
+            if (useUSCommands)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                times = Query(":FORM:DATA ASC;:DATA? '@TIME';");
+                currents = Query($":FORM:DATA ASC;:DATA? 'I{biasSmu}';");
+            }
+
+            double[][] dat; // TODO: check has inf?
+            ZipDetectInf(CommaStringToDoubleArray(times), CommaStringToDoubleArray(currents), out dat);
+            return dat;
         }
 
-        public void SweepMeasurement(double endV,
-            double stepV, double compI, int groundSMU, int sweepSMU,
-            double yMax)
+        public double[][] DoubleSweepFromZero(
+            int groundSMU, int sweepSMU,
+            double endV,
+            double stepV, double compI,
+            double yLim, out bool aborted)
         {
-            // Hard code
             string VStr, IStr, filePath, writeStr;
             double[][] VI;
-            bool abort;
-            Write("*RST");
 
-            // Channel settings ////////////////////////////////////////////////
+            Write("*RST");
             // TODO: Integration time, Hold time, Deley time
             DisableAllUnits(groundSMU, sweepSMU);
             ConfugureSmu(groundSMU, 3, 3);
             ConfugureSmu(sweepSMU, 1, 1);
 
-            // Measurement setup ///////////////////////////////////////////////
-            Write(":PAGE:MEAS:SWE:VAR1:STAR 0");
-            Write(":PAGE:MEAS:VAR1:STOP 0.1;");
-            Write(":PAGE:CHAN:UFUN:DEF 'ABSI','A','ABS(I" + sweepSMU + ")'");
-            Write("PAGE:DISP:GRAP:Y2:NAME 'ABSI'");
-            // Without below line, error on :PAGE:DISP:SET:GRAP:Y1
-            Write(":PAGE:MEAS:VAR1:STEP " + stepV + ";");
-            Write(":PAGE:MEAS:VAR1:MODE DOUB;");
-            // TODO: move to another place
-            Write(":PAGE:DISP:SET:GRAP:Y1:MIN " + -yMax);
-            Write(":PAGE:DISP:SET:GRAP:Y1:MAX " + yMax);
-            Write(":PAGE:DISP:GRAP:Y2:SCAL LOG");
-            Write(":PAGE:DISP:SET:GRAP:Y2:MIN 10e-13");
-            Write(":PAGE:DISP:SET:GRAP:Y2:MAX 1e-3"); // on 4156C: dec/grid
-
-            foreach (double v in AlternativeRange(0.1, 0.1, endV)) // 100mV step
+            if (useUSCommands)
             {
-                // Measure setup ///////////////////////////////////////////////
-                Write(":PAGE:DISP:SET:GRAP:X:MIN " + -Math.Abs(v));
-                Write(":PAGE:DISP:SET:GRAP:X:MAX " + Math.Abs(v));
-                // Measure /////////////////////////////////////////////////////
-                Write(":PAGE:MEAS:SWE:VAR1:STOP " + v);
-                string initTime = GetTime(); // 2015/07/06 20:13:08
-                Write(":PAGE:SCON:MEAS:APP");
-                //dmm.WriteString(":PAGE:SCON:MEAS:SING");
-                //dmm.WriteString(":PAGE:SCON:MEAS:STOP");
-                Query("*OPC?");
-                // Acuire and save data ////////////////////////////////////////
-                //dmm.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'V2';");
-                VStr = Query(":FORM:DATA ASC;:DATA? 'V" + sweepSMU + "';");
-                IStr = Query(":FORM:DATA ASC;:DATA? 'I" + sweepSMU + "';");
-
-                abort = ZipDetectInf(CommaStringToDoubleArray(VStr),
-                    CommaStringToDoubleArray(IStr), out VI);
-                writeStr = TwoDimDouble2String(VI);
-                writeStr = initTime + "\nV,I\n" + writeStr;
-                filePath = Environment.ExpandEnvironmentVariables("%temp%") +
-                    "\\" + initTime + ".txt";
-                System.IO.File.WriteAllText(filePath, writeStr);
-                filePath = Environment.ExpandEnvironmentVariables("%temp%") +
-                    "\\last.txt";
-                System.IO.File.WriteAllText(filePath, writeStr);
-                if (abort) break; // Finish if "stop button" on 4156C pressed.
+                throw new NotImplementedException();
             }
-            DisableAllUnits(1, 2);
-            return;
+            else
+            {
+                Write(":PAGE:MEAS:SWE:VAR1:STAR 0");
+                Write($":PAGE:MEAS:VAR1:STOP {endV};");
+                Write($":PAGE:CHAN:UFUN:DEF 'ABSI','A','ABS(I{sweepSMU})'");
+                Write($"PAGE:DISP:GRAP:Y2:NAME 'ABSI'");
+                // Without below line, error on :PAGE:DISP:SET:GRAP:Y1
+                Write($":PAGE:MEAS:VAR1:STEP {stepV};");
+                Write(":PAGE:MEAS:VAR1:MODE DOUB;");
+            }
+
+            ConfigureDisplay(Math.Min(0, endV), Math.Max(0, endV),
+                Math.Min(0, yLim), Math.Max(0, yLim));
+            SetY2($"I{sweepSMU}", true);
+
+            Write(":PAGE:SCON:MEAS:SING");
+            //dmm.WriteString(":PAGE:SCON:MEAS:APP");
+            //dmm.WriteString(":PAGE:SCON:MEAS:STOP");
+            Query("*OPC?");
+            //dmm.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'V2';");
+            VStr = Query(":FORM:DATA ASC;:DATA? 'V" + sweepSMU + "';");
+            IStr = Query(":FORM:DATA ASC;:DATA? 'I" + sweepSMU + "';");
+
+            aborted = ZipDetectInf(CommaStringToDoubleArray(VStr),
+                CommaStringToDoubleArray(IStr), out VI);
+            return VI;
         }
 
 
@@ -195,5 +188,35 @@ namespace Instr
             }
         }
 
+        private void SetY2(string y2Name, bool isLogScale = false)
+        {
+            if (useUSCommands)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                Write($":PAGE:DISP:GRAP:Y2:NAME '{y2Name}';");
+                if (isLogScale) Write(":PAGE:DISP:GRAP:Y2:SCAL LOG;");
+            }
+        }
+        private void ConfigureDisplay(double xmin, double xmax, double y1min, double y1max,
+            double y2min = 1e-15, double y2max = 10e-3)
+        {
+            if (useUSCommands)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                Write($":PAGE:DISP:SET:GRAP:X:MIN {xmin};");
+                Write($":PAGE:DISP:SET:GRAP:X:MAX {xmax};");
+                Write($":PAGE:DISP:SET:GRAP:Y1:MIN {y1min};");
+                Write($":PAGE:DISP:SET:GRAP:Y1:MAX {y1max};");
+                Write($":PAGE:DISP:SET:GRAP:Y2:MIN {y2min};");
+                Write($":PAGE:DISP:SET:GRAP:Y2:MAX {y2max};");
+            }
+
+        }
     }
 }

@@ -12,15 +12,11 @@ namespace Instr
     public static class Functions
     {
         /// <summary>
-        /// </summary>
-        /// <param name="data"></param>
-        /// <example>
-        /// <code>
         /// Write2DimDouble(
         ///     new[] { new[] { 1.0, 2, }, new[] { 3.0, 4 } });
-        /// returns "1,2\n3,4"
-        /// </code>
-        /// </example>
+        /// returns "1,2\n3,4" // TODO: "1,2,\n3,4\n"? check
+        /// </summary>
+        /// <param name="data"></param>
         public static string TwoDimDouble2String(double[][] data)
         {
             string joined = "";
@@ -32,6 +28,7 @@ namespace Instr
         }
 
         /// <summary>
+        /// Returns like "2015-07-06_20-13-08"
         /// </summary>
         /// <returns>Example: "2015-07-06_20-13-08"</returns>
         /// <remarks>Verified only in Japanese locale.</remarks>
