@@ -14,6 +14,8 @@ namespace Develop
     {
         static void Main(string[] args)
         {
+            var test = new Agilent4156C("GPIB0::18::INSTR");
+            test.Query("*IDN?");
             var visa = new VisaCommunicator("GPIB0::18::INSTR");
             visa.TimeoutSecond = 600;
             //SweepMeasurement(visa, 500e-3, .5e-3, 1e-3, 1, 3, 1e-6);

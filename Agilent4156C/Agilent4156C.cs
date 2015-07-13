@@ -4,8 +4,11 @@ using static Instr.Functions;
 
 namespace Instr
 {
-    public static class Agilent4156C
+    public class Agilent4156C : VisaCommunicator
     {
+        public Agilent4156C(string visaResource) : base(visaResource)
+        {
+        }
         public static void ContactTest(IVisaCommunicator visa, double timeInterval,
             double timeEnd)
         {
