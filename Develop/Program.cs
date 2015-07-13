@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define A
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,8 +14,8 @@ namespace Develop
     {
         static void Main(string[] args)
         {
-            var visa = new AgilentVisaCommunicator("GPIB0::18::INSTR");
-            visa.SetTimeout(600);
+            var visa = new VisaCommunicator("GPIB0::18::INSTR");
+            visa.TimeoutSecond = 600;
             //SweepMeasurement(visa, 500e-3, .5e-3, 1e-3, 1, 3, 1e-6);
             ContactTest(visa, 100e-3, 20);
         }
