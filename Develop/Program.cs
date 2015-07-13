@@ -14,12 +14,10 @@ namespace Develop
     {
         static void Main(string[] args)
         {
-            var test = new Agilent4156C("GPIB0::18::INSTR");
-            test.Query("*IDN?");
-            var visa = new VisaCommunicator("GPIB0::18::INSTR");
-            visa.TimeoutSecond = 600;
-            //SweepMeasurement(visa, 500e-3, .5e-3, 1e-3, 1, 3, 1e-6);
-            ContactTest(visa, 100e-3, 20);
+            var a = new Agilent4156C("GPIB0::18::INSTR", false);
+            a.TimeoutSecond = 600;
+            a.ContactTest(100e-3, 20);
+            //a.SweepMeasurement(500e-3, .5e-3, 1e-3, 1, 3, 1e-6);
         }
     }
 }
