@@ -154,7 +154,7 @@ namespace Instr
             }
             else
             {
-                string[] units = new[] { "SMU1", "SMU2", "SMU3", "SMU4", "VSU1", "VSU2", "VMU1", "VMU2" };
+                string[] units = new[] { null, "SMU1", "SMU2", "SMU3", "SMU4", "VSU1", "VSU2", "VMU1", "VMU2" };
                 for (int i = 1; i <= 8; i++)
                 {
                     if (exceptUnits.Contains(i)) continue;
