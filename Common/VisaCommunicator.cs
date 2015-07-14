@@ -31,8 +31,8 @@ namespace Instr
             io.IO = (Ivi.Visa.Interop.IMessage)rm.Open(visaResource);
             io.WriteString("*IDN?");
             string idn = io.ReadString();
-            Console.WriteLine($"Established the connection with{visaResource}.\n" +
-                $"*IDN? query responce:{idn}");
+            Console.WriteLine($"Established the connection with {visaResource}.\n" +
+                $"*IDN? query responce: {idn}");
         }
         ~VisaCommunicator()
         {

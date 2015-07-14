@@ -7,8 +7,8 @@
     <ProjectGuid>{888C0D49-51D2-4EB6-91BB-346B31A4C634}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>INstr</RootNamespace>
-    <AssemblyName>Agilent4156C</AssemblyName>
+    <RootNamespace>Instr</RootNamespace>
+    <AssemblyName>Instr</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="Agilent4156C.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SussPA300.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
