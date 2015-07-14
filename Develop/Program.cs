@@ -13,15 +13,13 @@ namespace Instr.Develop
         static void Main(string[] args)
         {
             var s = new SussPA300("GPIB0::7::INSTR");
-            
-            var a = new Agilent4156C("GPIB0::18::INSTR", false);
-            a.TimeoutSecond = 600;
 
-            double[][] dat;
+            var a = new Agilent4156C("GPIB0::18::INSTR", false) { TimeoutSecond = 600 };
+
             string writeStr;
 
             //// ContactTest
-            //dat = a.ContactTest(1, 3);
+            //double[][] tiPairs = a.ContactTest(1, 3);
             //writeStr = "t,I\n" + TwoDimDouble2String(dat);
             //Save($"ContactTest_{GetTime()}.txt", writeStr);
             //Save("last.txt", writeStr);
@@ -33,13 +31,19 @@ namespace Instr.Develop
                 // TODO: double acuumulate[][], save it
                 // TODO: header
                 // dat: { {0,1E-13}, {0.001,1.7E-13}, ... }
-                dat = a.DoubleSweepFromZero(1, 3, v, 0.1e-3, out aborted);
+                double[][] ivPairs = a.DoubleSweepFromZero(1, 3, v, 0.1e-3, out aborted);
                 // Plot(
-                writeStr = "V,I\n" + TwoDimDouble2String(dat);
+                writeStr = "V,I\n" + TwoDimDouble2String(ivPairs);
                 Save($"DoubleSweepFromZero_{GetTime()}.txt", writeStr);
                 Save("last.txt", writeStr);
                 if (aborted) break; // Finish if "stop button" on 4156C pressed.
             }
+            // Rerational DB
+            // I-V: V, I, t0, t
+            // params:  t0, sample, R, C, mesa, status, measPoints, comp, instr, iter, originalFilename
+            //    add x y, del 
+            // status: 0 valid, 1 invalid, 2 BD, 3: mecha BD, 4: process failed, 5: unstable I-V, 255: unconfirmed
+            // mesa: D5.54, D16.7, D56.3, D169
         }
 
         static void Save(string fileName, string text)
