@@ -15,24 +15,44 @@ namespace Develop
         {
             var a = new Agilent4156C("GPIB0::18::INSTR", false);
             a.TimeoutSecond = 600;
-            double[][] dat = a.ContactTest(1, 3);
 
-            bool aborted;
-            foreach (double v in AlternativeRange(0.1, 0.1, 0.5)) // 100mV step
+            double[][] dat;
+            string writeStr;
+
+            //// ContactTest
+            //dat = a.ContactTest(1, 3);
+            //writeStr = "t,I\n" + TwoDimDouble2String(dat);
+            //Save($"ContactTest_{GetTime()}.txt", writeStr);
+            //Save("last.txt", writeStr);
+
+            // DoubleSweepFromZero
+            bool aborted = false;
+            foreach (double v in AlternativeRange(100e-3, 100e-3, 200e-3)) // 100mV step
             {
-                a.DoubleSweepFromZero(1, 3, v, 0.1e-3, 10e-3, 1, out aborted);
+                // TODO: double acuumulate[][], save it
+                // TODO: header
+                // dat: { {0,1E-13}, {0.001,1.7E-13}, ... }
+                dat = a.DoubleSweepFromZero(1, 3, v, 0.1e-3, out aborted);
+                // Plot(
+                writeStr = "V,I\n" + TwoDimDouble2String(dat);
+                Save($"DoubleSweepFromZero_{GetTime()}.txt", writeStr);
+                Save("last.txt", writeStr);
                 if (aborted) break; // Finish if "stop button" on 4156C pressed.
             }
-
-            string writeStr = "\nt,I\n";
-            writeStr += TwoDimDouble2String(dat);
-            string filePath = Environment.ExpandEnvironmentVariables("%appdata%") +
-                $@"\Instr\Agilent4156C{GetTime()}.txt";
-            string lastFilePath = Environment.ExpandEnvironmentVariables("%appdata%") +
-                @"\Instr\Agilent4156C\last.txt";
-            (new FileInfo(filePath)).Directory.Create();
-            File.WriteAllText(filePath, writeStr);
-            File.WriteAllText(lastFilePath, writeStr);
         }
+
+        static void Save(string fileName, string text)
+        {
+            string filePath = Environment.ExpandEnvironmentVariables("%appdata%") +
+                $@"\Instr\Agilent4156C\" + fileName;
+            (new FileInfo(filePath)).Directory.Create();
+            File.WriteAllText(filePath, text);
+        }
+
+        static double[][] DummyReturns2DimDouble()
+        {
+            return new[] { new[] { 0e-3, 1e-3, 2e-3, 3e-3 }, new[] { 1e-6, 1.2e-6, 1.5e-6, 2e-6 } };
+        }
+
     }
 }

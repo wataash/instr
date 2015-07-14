@@ -15,10 +15,13 @@ namespace Instr
 
         public double[][] ContactTest(
             int groundSmu, int biasSmu,
-            double timeInterval = 50e-3, int points = 10001,
-            double voltage = 1e-3, double compliance = 10e-3)
+            double timeInterval = 50e-3,
+            double voltage = 1e-3, double compliance = 10e-3,
+            int measTimeSecond = 60, double y1Min = 0, double y1Max = 1e-3)
         // TODO: order in the displayed order on 4156C
         {
+            int points = (int)(measTimeSecond / timeInterval);
+            points = Math.Min(8000, points); // 8000: OK, 8500: "ERROR 7: DATA buffer full. Too many points."
             Write("*RST");
             if (useUSCommands)
                 throw new NotImplementedException();
@@ -26,8 +29,8 @@ namespace Instr
                 Write(":PAGE:CHAN:MODE SAMP;"); // not in GPIB mannual damn
 
             DisableAllUnits(groundSmu, biasSmu);
-            ConfugureSmu(groundSmu, 3, 3);
-            ConfugureSmu(biasSmu, 1, 3);
+            //ConfugureSmu(groundSmu, 3, 3); // not necessary
+            //ConfugureSmu(biasSmu, 1, 3); // not necessary
 
             if (useUSCommands)
             {
@@ -41,7 +44,7 @@ namespace Instr
             }
 
             SetY2($"I{biasSmu}", true);
-            ConfigureDisplay(0, 60, 3e-5, 4e-5, 1e-12, 100e-6); // 1 Gohm, 10 ohm at 1mV
+            ConfigureDisplay(0, measTimeSecond, y1Min, y1Max, 1e-12, 100e-6); // 1 Gohm, 10 ohm at 1mV
 
             if (useUSCommands)
             {
@@ -62,28 +65,44 @@ namespace Instr
             else
             {
                 times = Query(":FORM:DATA ASC;:DATA? '@TIME';");
+                // +0.000000E+000,+3.500000E-001,+6.000000E-001,+8.000000E-001,+9.91E+307,+9.91E+307
                 currents = Query($":FORM:DATA ASC;:DATA? 'I{biasSmu}';");
+                // +1.200000E-013,+1.200000E-013,+1.200000E-013,+1.200000E-013,+9.91E+307,+9.91E+307
             }
 
-            double[][] dat; // TODO: check has inf?
+            double[][] dat;
             ZipDetectInf(CommaStringToDoubleArray(times), CommaStringToDoubleArray(currents), out dat);
+            // { {0,1.2E-13}, {0.35, 1.2E-13}, {0.6, 1.2E-13}, {0.8, 1.2E-13} }
             return dat;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="groundSMU"></param>
+        /// <param name="sweepSMU"></param>
+        /// <param name="endV"></param>
+        /// <param name="stepV">should be larer tnan 0.</param>
+        /// <param name="aborted"></param>
+        /// <param name="displayCurrent">should be larger than 0.</param>
+        /// <param name="compI"></param>
+        /// <returns></returns>
         public double[][] DoubleSweepFromZero(
             int groundSMU, int sweepSMU,
-            double endV,
-            double stepV, double compI,
-            double yLim, out bool aborted)
+            double endV, double stepV,
+            out bool aborted, double displayCurrent = 10e-3, double compI = 10e-3)
         {
-            string VStr, IStr, filePath, writeStr;
+            if (displayCurrent <= 0) throw new ArgumentOutOfRangeException();
+            if (stepV <= 0) throw new ArgumentOutOfRangeException();
+            bool isP = endV > 0; // is positive sweep
+            string VStr, IStr;
             double[][] VI;
 
             Write("*RST");
             // TODO: Integration time, Hold time, Deley time
             DisableAllUnits(groundSMU, sweepSMU);
-            ConfugureSmu(groundSMU, 3, 3);
-            ConfugureSmu(sweepSMU, 1, 1);
+            //ConfugureSmu(groundSMU, 3, 3); // not necessary
+            //ConfugureSmu(sweepSMU, 1, 1); // not necessary
 
             if (useUSCommands)
             {
@@ -91,27 +110,32 @@ namespace Instr
             }
             else
             {
-                Write(":PAGE:MEAS:SWE:VAR1:STAR 0");
-                Write($":PAGE:MEAS:VAR1:STOP {endV};");
-                Write($":PAGE:CHAN:UFUN:DEF 'ABSI','A','ABS(I{sweepSMU})'");
-                Write($"PAGE:DISP:GRAP:Y2:NAME 'ABSI'");
-                // Without below line, error on :PAGE:DISP:SET:GRAP:Y1
-                Write($":PAGE:MEAS:VAR1:STEP {stepV};");
                 Write(":PAGE:MEAS:VAR1:MODE DOUB;");
+                //Write(":PAGE:MEAS:SWE:VAR1:STAR 0"); // not necessary
+                Write($":PAGE:MEAS:VAR1:STOP {endV};");
+                Write($":PAGE:MEAS:VAR1:STEP {(isP ? stepV : -stepV)};");
+                // TODO: hold time, deley time
+                // TODO: stop at abnormal
             }
 
-            ConfigureDisplay(Math.Min(0, endV), Math.Max(0, endV),
-                Math.Min(0, yLim), Math.Max(0, yLim));
             SetY2($"I{sweepSMU}", true);
+            ConfigureDisplay(isP ? 0 : endV, isP ? endV : 0, isP ? 0 : -displayCurrent, isP ? displayCurrent : 0,
+                isP ? 1e-15 : -10e-3, isP ? 10e-3 : -1e-15);
+
+
 
             Write(":PAGE:SCON:MEAS:SING");
             //dmm.WriteString(":PAGE:SCON:MEAS:APP");
             //dmm.WriteString(":PAGE:SCON:MEAS:STOP");
             Query("*OPC?");
             //dmm.WriteString(":FORM:BORD NORM;DATA REAL, 64;:DATA? 'V2';");
+
+            // +0.000000E+000,+1.000000E-003,+2.000000E-003,+3.000000E-003,+3.000000E-003,+2.000000E-003,+1.000000E-003,+0.000000E+000
             VStr = Query(":FORM:DATA ASC;:DATA? 'V" + sweepSMU + "';");
+            // +1.000000E-013,+1.700000E-013,+1.500000E-013,+1.500000E-013,+1.100000E-013,+1.400000E-013,+1.800000E-013,+9.000000E-014
             IStr = Query(":FORM:DATA ASC;:DATA? 'I" + sweepSMU + "';");
 
+            // VI: { {0,1E-13}, {0.001,1.7E-13}, ... }
             aborted = ZipDetectInf(CommaStringToDoubleArray(VStr),
                 CommaStringToDoubleArray(IStr), out VI);
             return VI;
