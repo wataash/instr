@@ -12,7 +12,7 @@ namespace Instr.Develop
     {
         static void Main(string[] args)
         {
-            var s = new SussPA300("GPIB0::7::INSTR");
+            var s = new SussPA300("GPIB0::7::INSTR") { TimeoutSecond = 5 };
 
             var a = new Agilent4156C("GPIB0::18::INSTR", false) { TimeoutSecond = 600 };
 

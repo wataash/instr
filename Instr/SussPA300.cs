@@ -14,7 +14,7 @@ namespace Instr
     {
         public SussPA300(string visaResource) : base(visaResource)
         {
-            return;
+            CheckStatus();
         }
 
         int xLimNegaMicron { get; set; } = -20000; // 20,000um = 2cm
@@ -23,6 +23,30 @@ namespace Instr
         int yLimPosMicron { get; set; } = 20000;
         int zLimNegaMicron { get; set; } = -350;
         int zLimPosMicron { get; set; } = 50;
+        double xMicron
+        {
+            get
+            {
+                return 0.0; // TODO
+            }
+        }
+        double yMicron { get; } // TODO
+        int xIndex
+        {
+            get
+            {
+                string s = Query("ReadChuckIndex");  // "0: 1300.0 1300.0"
+                double xDeltaMicron = double.Parse(s.Split()[1]);
+                return (int)(xMicron / xDeltaMicron); // TODO round
+            }
+        }
+        int yIndex
+        {
+            get
+            {
+                return 0; // TODO
+            }
+        }
 
         // do mannually
         //int xIndexMicroMeter { set; get; }
@@ -37,8 +61,15 @@ namespace Instr
                 responce = Query("MoveChuckSeparation 5"); // or align?
                 if (ReadErrCode(responce) != 0) throw new Exception("Error on MoveChuckSeparation.");
                 CheckStatus();
-
-
+                while (this.xIndex != xIndex || this.yIndex != yIndex)
+                {
+                    // TODO
+                    // move step by step
+                    // Query($"MoveChuckIndex {xIndex} {yIndex} H 5"); // from home position, 5% velocity
+                }
+                CheckStatus();
+                responce = Query("MoveChuckContact 5");
+                CheckStatus();
             }
             catch (Exception)
             {
@@ -56,10 +87,11 @@ namespace Instr
             string[] q = Query("ReadChuckPosition Y H D").Split(':'); // new string[] { "0", " 0.0 0.5 -1.27e-02" }
             if (q[0] != "0") throw new SystemException("Error on ReadChuckPosition.");
             int[] xyz = q[1].Split().Select(Int32.Parse).ToArray();
+
             if (xyz[0] < xLimNegaMicron) throw new SystemException("x negative limit.");
             if (xyz[0] > xLimPosMicron) throw new SystemException("x positive limit.");
             if (xyz[1] < yLimNegaMicron) throw new SystemException("y negative limit.");
-            if (xyz[1] > yLimNegaMicron) throw new SystemException("y positive limit.");
+            if (xyz[1] > yLimPosMicron) throw new SystemException("y positive limit.");
             if (xyz[2] < zLimNegaMicron) throw new SystemException("z negative limit.");
             if (xyz[2] > zLimPosMicron) throw new SystemException("z positive limit.");
         }
