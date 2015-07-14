@@ -4,10 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Instr;
 using static Instr.Functions;
 
-namespace Develop
+namespace Instr.Develop
 {
     class Program
     {
