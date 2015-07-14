@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.22823.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Agilent4156C", "Agilent4156C\Agilent4156C.csproj", "{888C0D49-51D2-4EB6-91BB-346B31A4C634}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Instr", "Agilent4156C\Instr.csproj", "{888C0D49-51D2-4EB6-91BB-346B31A4C634}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Develop", "Develop\Develop.csproj", "{8812058A-BC41-4F06-9BAF-4561CC1BF966}"
 EndProject
