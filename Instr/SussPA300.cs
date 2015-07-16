@@ -121,7 +121,7 @@ namespace Instr
                 Align();
                 CheckStatus();
             }
-            Query($"MoveChuck {xH} {yH} H 5");
+            Query($"MoveChuck {xH} {yH} H {velocity}");
             CheckStatus();
             Contact();
             CheckStatus();

@@ -28,29 +28,6 @@ namespace Instr
         }
 
         /// <summary>
-        /// Returns like "2015-07-06_20-13-08"
-        /// </summary>
-        /// <returns>Example: "2015-07-06_20-13-08"</returns>
-        /// <remarks>Verified only in Japanese locale.</remarks>
-        public static string GetTime()
-        {
-            string t = DateTime.Now.ToString();
-            // 2015/07/06 20:13:08 --> 2015-07-06_20-13-08
-            return t.Replace(":", "-").Replace("/", "-").Replace(" ", "_");
-        }
-
-        /// <summary>
-        /// Returns like "20150706-201308"
-        /// </summary>
-        /// <remarks>Verified only in Japanese locale.</remarks>
-        public static string GetTime2()
-        {
-            string t = DateTime.Now.ToString();
-            // 2015/07/06 20:13:08 --> 20150706-201308
-            return t.Replace(":", "").Replace("/", "").Replace(" ", "-");
-        }
-
-        /// <summary>
         /// CommaStringToDoubleArray("1,2,3e3") --> {1.0, 2.0, 3000.0}
         /// </summary>
         /// <param name="s"></param>

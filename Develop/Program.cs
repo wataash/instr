@@ -24,7 +24,7 @@ namespace Instr.Develop
                 double xOffset = 2621.5 - 1300; // [um]
                 double yOffset = 1731.5 - 1300;
                 //int[][] XYs = { new[] { 2, 2 }, new[] { 2, 1 }, new[] { 3, 1 } };
-                int[][] XYs = { new[] { 3, 2 }, new[] { 4, 2 }, new[] { 5, 2 }, new[] { 6, 2 }, new[] { 7, 2 }, new[] { 8, 2 }, new[] { 9, 2 }, new[] { 10, 2 } };
+                int[][] XYs = { new[] { 3, 1 }, new[] { 4, 1 }, new[] { 5, 1 }, new[] { 6, 1 }, new[] { 7, 1 }, new[] { 8, 1 }, new[] { 9, 1 }, new[] { 10, 1 } };
 
                 double xH, yH; // chuck xy [um] from home position, = -xpos, -ypos (subs xy)
                 double xpos, ypos;
@@ -32,6 +32,7 @@ namespace Instr.Develop
                 string t0;
                 foreach (int[] XY in XYs)
                 {
+                    t0 = DateTime.Now.ToString("yyyyMMdd-hhmmss");
                     xH = -((XY[0] - 1) * D) - xOffset;
                     yH = -((XY[1] - 1) * D) - yOffset;
                     xpos = ((XY[0] - 1) * D) + xOffset;
@@ -44,7 +45,7 @@ namespace Instr.Develop
                     // status: 0 valid, 1 invalid, 2 BD, 3: mecha BD, 4: process failed, 5: unstable I-V, 255: unconfirmed
                     // mesa: D5.54, D16.7, D56.3, D169
 
-                    t0 = GetTime2();
+                    t0 = DateTime.Now.ToString("yyyyMMdd-hhmmss");
                     ti = a.ContactTest(2, 1, points: 100);
                     fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_p1mV.csv";
                     writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
@@ -54,7 +55,7 @@ namespace Instr.Develop
                     Append("ContactTest_params.csv", writeStrToFile);
 
 
-                    t0 = GetTime2();
+                    t0 = DateTime.Now.ToString("yyyyMMdd-hhmmss");
                     ti = a.ContactTest(2, 1, points: 100, voltage: -1e-3);
                     fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_n1mV.csv";
                     writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
@@ -66,7 +67,7 @@ namespace Instr.Develop
                     s.Align();
                     s.Contact();
 
-                    t0 = GetTime2();
+                    t0 = DateTime.Now.ToString("yyyyMMdd-hhmmss");
                     ti = a.ContactTest(2, 1, points: 100);
                     fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_p1mV.csv";
                     writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
@@ -75,7 +76,7 @@ namespace Instr.Develop
                         $"t0={t0},sample=E0326-2-1,X={XY[0]},Y={XY[1]},xpos={xpos},ypos={ypos},mesa=D5.54,status=255,measPoints=100,Vsrc=0.001,comp=0.01,instr=SUSS PA200,originalFileName={fileName}\n";
                     Append("ContactTest_params.csv", writeStrToFile);
 
-                    t0 = GetTime2();
+                    t0 = DateTime.Now.ToString("yyyyMMdd-hhmmss");
                     ti = a.ContactTest(2, 1, points: 100, voltage: -1e-3);
                     fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_n1mV.csv";
                     writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
@@ -87,7 +88,7 @@ namespace Instr.Develop
                     s.Align();
                     s.Contact();
 
-                    t0 = GetTime2();
+                    t0 = DateTime.Now.ToString("yyyyMMdd-hhmmss");
                     ti = a.ContactTest(2, 1, points: 100);
                     fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_p1mV.csv";
                     writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
@@ -96,7 +97,7 @@ namespace Instr.Develop
                         $"t0={t0},sample=E0326-2-1,X={XY[0]},Y={XY[1]},xpos={xpos},ypos={ypos},mesa=D5.54,status=255,measPoints=100,Vsrc=0.001,comp=0.01,instr=SUSS PA200,originalFileName={fileName}\n";
                     Append("ContactTest_params.csv", writeStrToFile);
 
-                    t0 = GetTime2();
+                    t0 = DateTime.Now.ToString("yyyyMMdd-hhmmss");
                     ti = a.ContactTest(2, 1, points: 100, voltage: -1e-3);
                     fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_n1mV.csv";
                     writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
@@ -112,7 +113,7 @@ namespace Instr.Develop
             // ContactTest
             //double[][] tiPairs = a.ContactTest(2, 1);
             //writeStrToFile = "t,I\n" + TwoDimDouble2String(tiPairs);
-            //Save($"ContactTest_{GetTime()}.txt", writeStrToFile);
+            //Save($"ContactTest_{DateTime.Now.ToString("yyyyMMdd-hhmmss")}.txt", writeStrToFile);
             //Save("last.txt", writeStrToFile);
 
             // DoubleSweepFromZero
@@ -124,7 +125,7 @@ namespace Instr.Develop
             //    // TODO: header
             //    // ivPairs: { {0,1E-13}, {0.001,1.7E-13}, ... }
             //    //double[][] ivPairs = a.DoubleSweepFromZero(1, 3, v, 0.1e-3, out aborted);
-            //    string t0 = GetTime();
+            //    string t0 = DateTime.Now.ToString("yyyyMMdd-hhmmss");
             //    int R = 1, C = 1;
             //    string mesa = "D56.3";
             //    int status = 255;
