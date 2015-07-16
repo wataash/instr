@@ -12,9 +12,9 @@ namespace Instr.Develop
     {
         static void Main(string[] args)
         {
-            var s = new SussPA300("GPIB0::7::INSTR") { TimeoutSecond = 5 };
+            //var s = new SussPA300("GPIB0::7::INSTR") { TimeoutSecond = 5 };
 
-            var a = new Agilent4156C("GPIB0::18::INSTR", false) { TimeoutSecond = 600 };
+            //var a = new Agilent4156C("GPIB0::18::INSTR", false) { TimeoutSecond = 600 };
 
             string writeStr;
 
@@ -26,16 +26,26 @@ namespace Instr.Develop
 
             // DoubleSweepFromZero
             bool aborted = false;
+            List<double[]> ivPairsAccum = new List<double[]>();
             foreach (double v in AlternativeRange(100e-3, 100e-3, 200e-3)) // 100mV step
             {
                 // TODO: double acuumulate[][], save it
                 // TODO: header
-                // dat: { {0,1E-13}, {0.001,1.7E-13}, ... }
-                double[][] ivPairs = a.DoubleSweepFromZero(1, 3, v, 0.1e-3, out aborted);
-                // Plot(
-                writeStr = "V,I\n" + TwoDimDouble2String(ivPairs);
-                Save($"DoubleSweepFromZero_{GetTime()}.txt", writeStr);
+                // ivPairs: { {0,1E-13}, {0.001,1.7E-13}, ... }
+                //double[][] ivPairs = a.DoubleSweepFromZero(1, 3, v, 0.1e-3, out aborted);
+                string t0 = GetTime();
+                int R = 1, C = 1;
+                string mesa = "D56.3";
+                int status = 255;
+                List<double[]> ivPairs = DummyReturnsDoublePairs().ToList();
+                int points = ivPairs.Count;
+
+                writeStr = $"t0={t0},sample=E0326-2-1,R={R},C={C},mesa={mesa},status={status},";
+                writeStr += "V,I\n" + TwoDimDouble2String(ivPairs.ToArray());
+                Save($"DoubleSweepFromZero_{t0}.txt", writeStr);
                 Save("last.txt", writeStr);
+
+                ivPairsAccum = ivPairsAccum.Concat(ivPairs).ToList();
                 if (aborted) break; // Finish if "stop button" on 4156C pressed.
             }
             // Rerational DB
@@ -58,6 +68,15 @@ namespace Instr.Develop
         {
             return new[] { new[] { 0e-3, 1e-3, 2e-3, 3e-3 }, new[] { 1e-6, 1.2e-6, 1.5e-6, 2e-6 } };
         }
-
+        static double[][] DummyReturnsDoublePairs()
+        {
+            return new[]
+            {
+                new[] { 0e-3, 1e-6 },
+                new[] { 1e-3, 1.2e-6 },
+                new[] { 2e-3, 1.5e-6 },
+                new[] { 3e-3, 2e-6 }
+            };
+        }
     }
 }
