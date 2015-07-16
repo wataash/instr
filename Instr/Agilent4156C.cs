@@ -44,8 +44,8 @@ namespace Instr
                 Write(":PAGE:CHAN:MODE SAMP;"); // not in GPIB mannual damn
 
             DisableAllUnits(groundSmu, biasSmu);
-            //ConfugureSmu(groundSmu, 3, 3); // not necessary
-            //ConfugureSmu(biasSmu, 1, 3); // not necessary
+            ConfugureSmu(groundSmu, 3, 3);
+            ConfugureSmu(biasSmu, 1, 3);
 
             if (useUSCommands)
             {

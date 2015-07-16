@@ -61,7 +61,7 @@ namespace Instr
         int xIndex { get { return (int)Math.Round(xH / xIndexMicron); } }// TODO: test
         int yIndex { get { return (int)Math.Round(yH / yIndexMicron); } }
 
-        private double v = 5;
+        private double v = 1;
         /// <summary>
         /// TODO: test, wrong way?
         /// </summary>
