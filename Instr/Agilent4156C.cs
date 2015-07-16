@@ -84,7 +84,6 @@ namespace Instr
                 currents = CommaStringToDoubleArray(Query($":FORM:DATA ASC;:DATA? 'I{biasSmu}';"));
                 // +1.200000E-013,+1.200000E-013,+1.200000E-013,+1.200000E-013,+9.91E+307,+9.91E+307
             }
-            int removeIndex = SearchInf(times)[0];
             return new[] {times, currents};
         }
 

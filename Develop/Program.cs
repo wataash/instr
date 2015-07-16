@@ -13,29 +13,31 @@ namespace Instr.Develop
     {
         private static void Main(string[] args)
         {
-            double[] aaa = new[] { 1.1, 1.2 };
             string writeStrToFile, fileName;
             var s = new SussPA300("GPIB0::7::INSTR") { TimeoutSecond = 5 };
             var a = new Agilent4156C("GPIB0::18::INSTR", false) { TimeoutSecond = 600 };
 
+            // initial state: calibrated, set home to subs LD, set z, align
             double D = 1300; // Move Delta [um]
-            double xOffset = 500; // [um]
-            double yOffset = 500;
-            int[][] XYs = { new[] { 1, 1 }, new[] { 2, 1 }, new[] { 3, 1 } };
+            double xOffset = 791; // [um]
+            double yOffset = 794;
+            int[][] XYs = { new[] { 2, 2 }, new[] { 2, 1 }, new[] { 3, 1 } };
 
             double xH, yH; // xy [um] from home position
             double[][] ti; // time, current
             string t0;
             foreach (int[] XY in XYs)
             {
-                xH = -XY[0] * D + xOffset;
-                yH = -XY[1] * D + yOffset;
-                s.MoveChuckHCont(xH, yH, 2);
+                xH = -((XY[0] - 1) * D) + xOffset;
+                yH = -((XY[1] - 1) * D) + yOffset;
+                s.MoveChuckHCont(xH, yH, 0);
+
+                // TODO: RDB xH yH
 
                 t0 = GetTime2();
                 ti = a.ContactTest(1, 3, points: 100);
-                fileName = $"ContactTest_t0_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54.csv";
-                writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]);
+                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54.csv";
+                writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
                 Save(fileName, writeStrToFile);
 
                 s.Align();
@@ -43,8 +45,8 @@ namespace Instr.Develop
 
                 t0 = GetTime2();
                 ti = a.ContactTest(1, 3, points: 100);
-                fileName = $"ContactTest_t0_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54.csv";
-                writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]);
+                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54.csv";
+                writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
                 Save(fileName, writeStrToFile);
 
                 s.Align();
@@ -52,8 +54,8 @@ namespace Instr.Develop
 
                 t0 = GetTime2();
                 ti = a.ContactTest(1, 3, points: 100);
-                fileName = $"ContactTest_t0_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54.csv";
-                writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]);
+                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54.csv";
+                writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
                 Save(fileName, writeStrToFile);
 
                 s.Align();

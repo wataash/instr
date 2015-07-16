@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Instr
 {
@@ -60,17 +61,18 @@ namespace Instr
         int xIndex { get { return (int)Math.Round(xH / xIndexMicron); } }// TODO: test
         int yIndex { get { return (int)Math.Round(yH / yIndexMicron); } }
 
+        private double v = 5;
         /// <summary>
-        /// TODO: test
+        /// TODO: test, wrong way?
         /// </summary>
         private double velocity
         {
-            get { return velocity; }
+            get { return v; }
             set
             {
-                if (velocity < 0 || 100 < velocity)
-                    throw new ArgumentOutOfRangeException(nameof(velocity));
-                velocity = value;
+                if (value < 0 || 100 < value)
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                v = value;
             }
         }
 
@@ -154,16 +156,14 @@ namespace Instr
         /// </summary>
         private void CheckStatus()
         {
-            string[] q = Query("ReadChuckPosition Y H D").Split(':'); // new string[] { "0", " 0.0 0.5 -1.27e-02" }
-            if (q[0] != "0") throw new SystemException("Error on ReadChuckPosition.");
-            int[] xyz = q[1].Split().Select(Int32.Parse).ToArray();
-
-            if (xyz[0] < xHLimNega) throw new SystemException("x negative limit.");
-            if (xyz[0] > xHLimPos) throw new SystemException("x positive limit.");
-            if (xyz[1] < yHLimNega) throw new SystemException("y negative limit.");
-            if (xyz[1] > yHLimPos) throw new SystemException("y positive limit.");
-            if (xyz[2] < zHLimNega) throw new SystemException("z negative limit.");
-            if (xyz[2] > zHLimPos) throw new SystemException("z positive limit.");
+            string[] q = Query("ReadSystemStatus").Split(':'); // new string[] { "0", " PA300PS..." }
+            if (q[0] != "0") throw new SystemException("Error on ReadSystemStatus.");
+            if (xH < xHLimNega) throw new SystemException("x negative limit.");
+            if (xH > xHLimPos) throw new SystemException("x positive limit.");
+            if (yH < yHLimNega) throw new SystemException("y negative limit.");
+            if (yH > yHLimPos) throw new SystemException("y positive limit.");
+            if (zH < zHLimNega) throw new SystemException("z negative limit.");
+            if (zH > zHLimPos) throw new SystemException("z positive limit.");
         }
 
         private int ReadErrCode(string responce)
