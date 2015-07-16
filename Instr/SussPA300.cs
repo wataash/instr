@@ -23,34 +23,41 @@ namespace Instr
         int yLimPosMicron { get; set; } = 20000;
         int zLimNegaMicron { get; set; } = -350;
         int zLimPosMicron { get; set; } = 50;
-        double xMicron
-        {
-            get
-            {
-                return 0.0; // TODO
-            }
-        }
-        double yMicron { get; } // TODO
-        int xIndex
-        {
-            get
-            {
-                string s = Query("ReadChuckIndex");  // "0: 1300.0 1300.0"
-                double xDeltaMicron = double.Parse(s.Split()[1]);
-                return (int)(xMicron / xDeltaMicron); // TODO round
-            }
-        }
-        int yIndex
-        {
-            get
-            {
-                return 0; // TODO
-            }
-        }
 
-        // do mannually
-        //int xIndexMicroMeter { set; get; }
-        //int yIndexMicroMeter { set; get; }
+        /// <summary>
+        /// Distance from home position
+        /// TODO: unit test
+        /// </summary>
+        double[] xyzMicron
+        {
+            get
+            {
+                // "0: 0.0 -0.5 -300.08" -> {"0:", "0.0", "-0.5", "-300.08"}
+                string[] q = Query("ReadChuckPosition Y H D").Split();
+                return new[] { Double.Parse(q[1]), Double.Parse(q[2]), Double.Parse(q[3]) };
+            }
+        }
+        double xMicron { get { return xyzMicron[0]; } }
+        double yMicron { get { return xyzMicron[1]; } }
+        double zMicron { get { return xyzMicron[2]; } }
+
+        /// <summary>
+        /// Index (delta) of {x, y} in [um] unit.
+        /// TODO: unit test
+        /// </summary>
+        double[] xyIndexMicron
+        {
+            get
+            {
+                // "0: 1300.0 1300.0" -> {"0", "1300.0", "1300.0"}
+                string[] q = Query("ReadChuckIndex").Split();
+                return new[] { Double.Parse(q[1]), Double.Parse(q[2]) };
+            }
+        }
+        double xIndexMicron { get { return xyIndexMicron[0]; } }
+        double yIndexMicron { get { return xyIndexMicron[1]; } }
+        int xIndex { get { return (int)(xMicron / xIndexMicron); } }// TODO round
+        int yIndex { get { return (int)(yMicron / yIndexMicron); } }// TODO round
 
         public int[] SepareteIndexMoveContact(int xIndex, int yIndex)
         {
@@ -81,6 +88,33 @@ namespace Instr
             }
             return new[] { 0, 0 };
         }
+
+        /// <summary>
+        /// If xyIndexMicron == {1000, 1000},
+        /// MoveIndexFromHere(2, -1) -> moves chuck 2000um to right and 1000um to front (down).
+        /// Returns xyz position.
+        /// TODO: unit test
+        /// </summary>
+        /// <param name="xNum">-20 &lt; xNum &lt; 20</param>
+        /// <param name="yNum">-20 &lt; yNum &lt; 20</param>
+        /// <param name="separateBefore">0: not separate, 1: separate, 2: align</param>
+        /// <returns></returns>
+        public double[] MoveIndexFromHere(int xNum, int yNum, int separateBefore)
+        {
+            if (Math.Abs(xNum) > 20 || Math.Abs(yNum) > 20) throw new ArgumentOutOfRangeException(nameof(xNum), "Too much long movement.");
+            if (separateBefore < 0 || 2 < separateBefore) throw new ArgumentOutOfRangeException(nameof(separateBefore));
+            CheckStatus();
+            if (separateBefore == 1) Separate();
+            if (separateBefore == 2) Align();
+            CheckStatus();
+            Query($"MoveChuckIndex {xNum} {yNum} R 5"); // from home position, 5% velocity
+            CheckStatus();
+            return xyzMicron;
+        }
+
+        public double[] Contact() { return new[] { 0.0 }; }
+        public double[] Align() { return new[] { 0.0 }; }
+        public double[] Separate() { return new[] { 0.0 }; }
 
         private void CheckStatus()
         {

@@ -11,6 +11,7 @@ namespace Instr
         public Agilent4156C(string visaResource, bool useUSCommands) : base(visaResource)
         {
             this.useUSCommands = useUSCommands;
+            if (useUSCommands) Write("US");
         }
 
         public double[][] ContactTest(
