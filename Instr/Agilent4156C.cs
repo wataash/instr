@@ -6,7 +6,7 @@ namespace Instr
 {
     public class Agilent4156C : VisaCommunicator
     {
-        bool useUSCommands;
+        bool useUSCommands; // see GPIB manual
 
         public Agilent4156C(string visaResource, bool useUSCommands) : base(visaResource)
         {
@@ -14,14 +14,28 @@ namespace Instr
             if (useUSCommands) Write("US");
         }
 
+        /// <summary>
+        /// Integration time is fixed to 20ms (1NPLC).
+        /// Returns {{t0, t1, t2, ...}, {i0, i1, i2, ...}}
+        /// </summary>
+        /// <param name="groundSmu"></param>
+        /// <param name="biasSmu"></param>
+        /// <param name="timeInterval"></param>
+        /// <param name="voltage"></param>
+        /// <param name="compliance"></param>
+        /// <param name="measTimeSecond">Converted to points=measTimeSecond/timeInterval. Ignored if "points" is given.</param>
+        /// <param name="points">Overides "measTimeSecond".</param>
+        /// <param name="y1Min"></param>
+        /// <param name="y1Max"></param>
+        /// <returns></returns>
         public double[][] ContactTest(
             int groundSmu, int biasSmu,
-            double timeInterval = 50e-3,
+            double timeInterval = 10e-3,
             double voltage = 1e-3, double compliance = 10e-3,
-            int measTimeSecond = 60, double y1Min = 0, double y1Max = 1e-3)
+            int measTimeSecond = 60, int points = 0, double y1Min = 0, double y1Max = 1e-3)
         // TODO: order in the displayed order on 4156C
         {
-            int points = (int)(measTimeSecond / timeInterval);
+            if (points == 0) points = (int)(measTimeSecond / timeInterval);
             points = Math.Min(8000, points); // 8000: OK, 8500: "ERROR 7: DATA buffer full. Too many points."
             Write("*RST");
             if (useUSCommands)
@@ -53,28 +67,25 @@ namespace Instr
             }
             else
             {
-                Write(":PAGE:MEAS:MSET:ITIM MED;");
+                Write(":PAGE:MEAS:MSET:ITIM MED;"); // fixed
                 Write(":PAGE:SCON:SING");
             }
 
             Query("*OPC?");
-            string times, currents;
+            double[] times, currents;
             if (useUSCommands)
             {
                 throw new NotImplementedException();
             }
             else
             {
-                times = Query(":FORM:DATA ASC;:DATA? '@TIME';");
+                times = CommaStringToDoubleArray(Query(":FORM:DATA ASC;:DATA? '@TIME';"));
                 // +0.000000E+000,+3.500000E-001,+6.000000E-001,+8.000000E-001,+9.91E+307,+9.91E+307
-                currents = Query($":FORM:DATA ASC;:DATA? 'I{biasSmu}';");
+                currents = CommaStringToDoubleArray(Query($":FORM:DATA ASC;:DATA? 'I{biasSmu}';"));
                 // +1.200000E-013,+1.200000E-013,+1.200000E-013,+1.200000E-013,+9.91E+307,+9.91E+307
             }
-
-            double[][] dat;
-            ZipDetectInf(CommaStringToDoubleArray(times), CommaStringToDoubleArray(currents), out dat);
-            // { {0,1.2E-13}, {0.35, 1.2E-13}, {0.6, 1.2E-13}, {0.8, 1.2E-13} }
-            return dat;
+            int removeIndex = SearchInf(times)[0];
+            return new[] {times, currents};
         }
 
         /// <summary>
