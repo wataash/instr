@@ -23,7 +23,7 @@ namespace Instr.Develop
             double yOffset = 794;
             int[][] XYs = { new[] { 2, 2 }, new[] { 2, 1 }, new[] { 3, 1 } };
 
-            double xH, yH; // xy [um] from home position
+            double xH, yH; // chuck xy [um] from home position, = -xpos, -ypos (subs xy)
             double[][] ti; // time, current
             string t0;
             foreach (int[] XY in XYs)
@@ -32,31 +32,72 @@ namespace Instr.Develop
                 yH = -((XY[1] - 1) * D) + yOffset;
                 s.MoveChuckHCont(xH, yH, 0);
 
-                // TODO: RDB xH yH
+                // TODO: RDB
+                // t0(key), index(key), t, I
+                // t0(key), sample, X, Y, x, y, mesa, status, measPoints, VSrc, comp, instr, originalFilename
+                // status: 0 valid, 1 invalid, 2 BD, 3: mecha BD, 4: process failed, 5: unstable I-V, 255: unconfirmed
+                // mesa: D5.54, D16.7, D56.3, D169
 
                 t0 = GetTime2();
                 ti = a.ContactTest(1, 3, points: 100);
-                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54.csv";
+                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_p1mV.csv";
                 writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
                 Save(fileName, writeStrToFile);
+                writeStrToFile =
+                    $"t0={t0},sample=E0326-2-1,X={XY[0]},Y={XY[1]},xpos={-xH},ypos={-yH},mesa=D5.54,status=255,measPoints=100,Vsrc=0.001,comp=0.01,instr=SUSS PA200,originalFileName={fileName}\n";
+                Append("ContactTest_params.csv", writeStrToFile);
+
+
+                t0 = GetTime2();
+                ti = a.ContactTest(1, 3, points: 100, voltage: -1e-3);
+                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_n1mV.csv";
+                writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
+                Save(fileName, writeStrToFile);
+                writeStrToFile =
+                    $"t0={t0},sample=E0326-2-1,X={XY[0]},Y={XY[1]},xpos={-xH},ypos={-yH},mesa=D5.54,status=255,measPoints=100,Vsrc=-0.001,comp=0.01,instr=SUSS PA200,originalFileName={fileName}\n";
+                Append("ContactTest_params.csv", writeStrToFile);
 
                 s.Align();
                 s.Contact();
 
                 t0 = GetTime2();
                 ti = a.ContactTest(1, 3, points: 100);
-                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54.csv";
+                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_p1mV.csv";
                 writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
                 Save(fileName, writeStrToFile);
+                writeStrToFile =
+                    $"t0={t0},sample=E0326-2-1,X={XY[0]},Y={XY[1]},xpos={-xH},ypos={-yH},mesa=D5.54,status=255,measPoints=100,Vsrc=0.001,comp=0.01,instr=SUSS PA200,originalFileName={fileName}\n";
+                Append("ContactTest_params.csv", writeStrToFile);
+
+                t0 = GetTime2();
+                ti = a.ContactTest(1, 3, points: 100, voltage: -1e-3);
+                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_n1mV.csv";
+                writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
+                Save(fileName, writeStrToFile);
+                writeStrToFile =
+                    $"t0={t0},sample=E0326-2-1,X={XY[0]},Y={XY[1]},xpos={-xH},ypos={-yH},mesa=D5.54,status=255,measPoints=100,Vsrc=-0.001,comp=0.01,instr=SUSS PA200,originalFileName={fileName}\n";
+                Append("ContactTest_params.csv", writeStrToFile);
 
                 s.Align();
                 s.Contact();
 
                 t0 = GetTime2();
                 ti = a.ContactTest(1, 3, points: 100);
-                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54.csv";
+                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_p1mV.csv";
                 writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
                 Save(fileName, writeStrToFile);
+                writeStrToFile =
+                    $"t0={t0},sample=E0326-2-1,X={XY[0]},Y={XY[1]},xpos={-xH},ypos={-yH},mesa=D5.54,status=255,measPoints=100,Vsrc=0.001,comp=0.01,instr=SUSS PA200,originalFileName={fileName}\n";
+                Append("ContactTest_params.csv", writeStrToFile);
+
+                t0 = GetTime2();
+                ti = a.ContactTest(1, 3, points: 100, voltage: -1e-3);
+                fileName = $"ContactTest_{t0}_E0326-2-1_X{XY[0]}_Y{XY[1]}_D5.54_n1mV.csv";
+                writeStrToFile = String.Join(",", ti[0]) + "\n" + String.Join(",", ti[1]) + "\n";
+                Save(fileName, writeStrToFile);
+                writeStrToFile =
+                    $"t0={t0},sample=E0326-2-1,X={XY[0]},Y={XY[1]},xpos={-xH},ypos={-yH},mesa=D5.54,status=255,measPoints=100,Vsrc=-0.001,comp=0.01,instr=SUSS PA200,originalFileName={fileName}\n";
+                Append("ContactTest_params.csv", writeStrToFile);
 
                 s.Align();
             }
@@ -104,6 +145,13 @@ namespace Instr.Develop
                               $@"\Instr\Agilent4156C\" + fileName;
             (new FileInfo(filePath)).Directory.Create();
             File.WriteAllText(filePath, text);
+        }
+
+        private static void Append(string fileName, string text)
+        {
+            string filePath = Environment.ExpandEnvironmentVariables("%appdata%") +
+                  $@"\Instr\Agilent4156C\" + fileName;
+            File.AppendAllText(filePath, text);
         }
 
         private static double[][] DummyReturns2DimDouble()
