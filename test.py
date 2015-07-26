@@ -1,6 +1,7 @@
 import math
 import os
 import time
+import traceback
 
 import visa
 
@@ -91,35 +92,45 @@ def XY_to_xy_subs(XY, ref_XYxy_from_home):
 
 mesa = 'D169'
 datadir = os.environ['appdata'] + r'\Instr\Agilent4156C'
-for (X, Y) in meas_XYs:
-    (x_subs, y_subs) = XY_to_xy_subs((X, Y), ref_XYxy1)
-    (x_from_home, y_from_home) = xy_subs_to_home(x_subs, y_subs)
-    # input('move z, xy, z!!!!!!!!!!!!!!!!!!!!!!!')
-    s.moveZ(z_separete)
-    # s.align()
-    s.move_to_xy_from_home(x_from_home, y_from_home)
-    s.moveZ(z_contact)
-    # s.contact()
-    # for V in [0.1, -0.1, 0.2, -0.2, 0.3, -0.3, -0.4, 0.4, -0.5, 0.5]:
-    for V in [0.2, -0.2]:
-        t0 = time.strftime('%Y%m%d-%H%M%S')
-        vout, iout, aborted = a.double_sweep_from_zero(2, 1, V, V/1000, 10e-6, 10e-3)
-        filename = 'double-sweep_{}_E0326-2-1_X{}_Y{}_{}_{}V.csv'.format(t0, X, Y, mesa, V)
-        points = len(vout)
-        with open(datadir + '\\' + filename, 'w') as f:
-            tmp = [str(elem) for elem in vout]
-            tmp = ','.join(tmp)
-            f.write(tmp) # v,v,v,v
-            f.write('\n')
-            tmp = [str(elem) for elem in iout]
-            tmp = ','.join(tmp)
-            f.write(tmp) # i,i,i,i
-            f.write('\n')
-        with open(datadir + '\\double-sweep_params.csv', 'a') as f:
-            f.write('t0={},sample=E0326-2-1,X={},Y={},xpos={},ypos={},mesa={},status=255,measPoints={},comp=0.01,instr=SUSS PA200, originalFileName={}\n'.
-                   format(t0, X, Y, x_subs, y_subs, mesa, points, filename))
-            # t0=20150717-125846, sample=E0326-2-1,X=5,Y=3,xpos=5921.5,ypos=3031.5,mesa=D56.3,status=255,measPoints=101,comp=0.01,instr=SUSS PA200, originalFileName=double-sweep_20150717-125846_E0326-2-1_X5_Y3_D56.3_0.1V.csv
-        if aborted:
-            break
-
-print(0)
+try:
+    for (X, Y) in meas_XYs:
+        (x_subs, y_subs) = XY_to_xy_subs((X, Y), ref_XYxy1)
+        (x_from_home, y_from_home) = xy_subs_to_home(x_subs, y_subs)
+        # input('move z, xy, z!!!!!!!!!!!!!!!!!!!!!!!')
+        s.moveZ(z_separete)
+        # s.align()
+        s.move_to_xy_from_home(x_from_home, y_from_home)
+        s.moveZ(z_contact)
+        # s.contact()
+        # for V in [0.1, -0.1, 0.2, -0.2, 0.3, -0.3, -0.4, 0.4, -0.5, 0.5]:
+        for V in [0.2, -0.2]:
+            t0 = time.strftime('%Y%m%d-%H%M%S')
+            vout, iout, aborted = a.double_sweep_from_zero(2, 1, V, V/1000, 10e-6, 10e-3)
+            filename = 'double-sweep_{}_E0326-2-1_X{}_Y{}_{}_{}V.csv'.format(t0, X, Y, mesa, V)
+            points = len(vout)
+            with open(datadir + '\\' + filename, 'w') as f:
+                tmp = [str(elem) for elem in vout]
+                tmp = ','.join(tmp)
+                f.write(tmp) # v,v,v,v
+                f.write('\n')
+                tmp = [str(elem) for elem in iout]
+                tmp = ','.join(tmp)
+                f.write(tmp) # i,i,i,i
+                f.write('\n')
+            with open(datadir + '\\double-sweep_params.csv', 'a') as f:
+                f.write('t0={},sample=E0326-2-1,X={},Y={},xpos={},ypos={},mesa={},status=255,measPoints={},comp=0.01,instr=SUSS PA200, originalFileName={}\n'.
+                       format(t0, X, Y, x_subs, y_subs, mesa, points, filename))
+                # t0=20150717-125846, sample=E0326-2-1,X=5,Y=3,xpos=5921.5,ypos=3031.5,mesa=D56.3,status=255,measPoints=101,comp=0.01,instr=SUSS PA200, originalFileName=double-sweep_20150717-125846_E0326-2-1_X5_Y3_D56.3_0.1V.csv
+            if aborted:
+                break
+except:
+    with open(os.path.expanduser('~') + r'\Dropbox\work\instr_report.txt') as f:
+        f.write(traceback.format_exc() + '\n')
+        f.write('\n---------- locals() ----------\n{}\n'.format(locals()))
+        f.write('\n---------- globals() ----------\n{}\n'.format(globals()))
+    raise
+else:
+    with open(os.path.expanduser('~') + r'\Dropbox\work\instr_report.txt') as f:
+        f.write('Measurement done.\n')
+        f.write('\n---------- locals() ----------\n{}\n'.format(locals()))
+        f.write('\n---------- globals() ----------\n{}\n'.format(globals()))
