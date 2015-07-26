@@ -90,7 +90,7 @@ def XY_to_xy_subs(XY, ref_XYxy_from_home):
     y = ref_xy_subs[1] + delta_Y * distance_between_mesa
     return x, y
 
-mesa = 'D169'
+mesa = 'D169' # D56.3, D16.7, D5.54
 datadir = os.environ['appdata'] + r'\Instr\Agilent4156C'
 try:
     for (X, Y) in meas_XYs:
@@ -124,13 +124,13 @@ try:
             if aborted:
                 break
 except:
-    with open(os.path.expanduser('~') + r'\Dropbox\work\instr_report.txt') as f:
+    with open(os.path.expanduser('~') + r'\Dropbox\work\instr_report.txt', 'w') as f:
         f.write(traceback.format_exc() + '\n')
         f.write('\n---------- locals() ----------\n{}\n'.format(locals()))
         f.write('\n---------- globals() ----------\n{}\n'.format(globals()))
     raise
 else:
-    with open(os.path.expanduser('~') + r'\Dropbox\work\instr_report.txt') as f:
+    with open(os.path.expanduser('~') + r'\Dropbox\work\instr_report.txt', 'w') as f:
         f.write('Measurement done.\n')
         f.write('\n---------- locals() ----------\n{}\n'.format(locals()))
         f.write('\n---------- globals() ----------\n{}\n'.format(globals()))
