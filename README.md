@@ -1,6 +1,3 @@
-# SUSS
-Under construction.
-
 # Instr
 Under development.  
 Automates laboratory equipments.  
