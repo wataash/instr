@@ -1,8 +1,22 @@
 # Instr
-Under development.
+Under development.  
+Automates laboratory equipments.  
+This software is released under the MIT License, see LICENSE.txt.  
+Developing environment: python 3.4, pycharm
 
-Automates laboratory equipments.
+## Requirements
+- python 3.4
+- pyvisa  
+`pip install pyvisa`
 
-SUSS PA300 system
--- SUSS PA300 (not yet implemented)
--- Agilent 4156C (or 4155C)
+## Instrument Systems
+
+### SUSS PA300 auto prober
+* SUSS PA300
+* Agilent 4156C (or 4155C)
+
+### I - (V, B, T) measurement
+Not Implemented.
+
+## File Structures
+old_csharp: old code. (this program was written in c# at first)

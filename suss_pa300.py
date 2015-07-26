@@ -75,7 +75,7 @@ class SussPA300(BaseInstr):
             raise RuntimeError('Over xyz limit.')
 
     def move_to_xy_from_center(self, x, y):
-        if self._over_limit_from_center((x, y)): # TODO test
+        if self._over_limit_from_center((x, y)):
             raise RuntimeError('Exceeds xy limit.')
         if self._debug_mode:
             return
