@@ -1,9 +1,6 @@
-<<<<<<< HEAD
 # SUSS
 Under construction.
 
-I-V measurement automation for SUSS PA200 system.
-=======
 # Instr
 Under development.  
 Automates laboratory equipments.  
@@ -26,4 +23,3 @@ Not Implemented.
 
 ## File Structures
 old_csharp: old code. (this program was written in c# at first)
->>>>>>> develop
