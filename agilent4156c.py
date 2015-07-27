@@ -13,7 +13,7 @@ class Agilent4156C(BaseInstr):
         if self.q('*IDN?') != 'HEWLETT-PACKARD,4156C,0,03.10:04.08:01.00\n':
             raise RuntimeError('Failed to connect to Agilent 4156C.')
         self.w('*RST')  # Restore default configuration
-        self.w('*CLS')  # Clear buffer
+        self.w('*CLS')  # Clear query buffer
 
     def configure_smu(self, smu_num, mode, func, V_name=None, I_name=None):
         """ Description here
