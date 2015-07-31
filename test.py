@@ -19,8 +19,6 @@ mesa = 'D56.3'
 distance_between_mesa = 1300
 z_contact = 12000
 z_separete = z_contact - 100
-theta_diagonal = 20.5
-(x00, y00) = (10, 20)
 last_X = 11
 last_Y = 4
 # meas_XYs = [(1, 1), (3, 2), (1, 2), (2, 1)]
@@ -32,6 +30,8 @@ meas_Vs = [0.1, -0.1, 0.2, -0.2, 0.3, -0.3]
 # References for calculating theta
 # ref_XYxy1 = [1, 1, -711, -425]
 # ref_XYxy2 = [11, 4, -13605, -4636]
+# Use theta.py
+(theta_diagonal, x00_subs, y00_subs) = (21.44501633542317, -890.5720364478045, -878.5148369616054)
 
 # Initialize
 rm = visa.ResourceManager()
@@ -84,24 +84,24 @@ def rotate_vector(x, y, theta_deg):
 # theta_deg = theta_vector_subs_deg - theta_vector_chuck_deg
 
 
-input('Measure!!!')
+input('Set substrate LD home')
 try:
     s.velocity = 10
-    s.moveZ(z_separete - 1000)
+    s.moveZ(z_separete - 100)
     s.velocity = 1
-    s.move_to_xy_from_home(x00 + last_X * distance_between_mesa,
-                           y00 + last_Y * distance_between_mesa)
+    s.move_to_xy_from_home(-x00_subs - last_X * distance_between_mesa,
+                           -y00_subs - last_Y * distance_between_mesa)
     input('Right click substrate right up edge.')
-    (x_diagonal_from_home, y_diagonal_from_home) = s.read_xyz('H')
-    theta_diagonal_tilled = math.atan(y_diagonal_from_home/x_diagonal_from_home)
+    (x_diagonal_from_home, y_diagonal_from_home, _) = s.read_xyz('H')
+    theta_diagonal_tilled = math.atan(y_diagonal_from_home/x_diagonal_from_home) * 180/math.pi
     theta_pattern_tilled = theta_diagonal_tilled - theta_diagonal
     for (X, Y) in meas_XYs:
         s.moveZ(z_separete)  # s.align()
         # s.move_to_xy_from_home(x_from_home, y_from_home)
-        x_subs = x00 + X * distance_between_mesa
-        y_subs = y00 + Y * distance_between_mesa
-        (x_next_from_home, y_from_home) = rotate_vector(x_subs, y_subs, theta_pattern_tilled)
-        s.move_to_xy_from_home(x_next_from_home, y_from_home)
+        x_next_subs = x00_subs + X * distance_between_mesa
+        y_next_subs = y00_subs + Y * distance_between_mesa
+        (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
+        s.move_to_xy_from_home(x_next_from_home, y_next_from_home)
         s.moveZ(z_contact)  # s.contact()
         for V in meas_Vs:
             t0 = time.strftime('%Y%m%d-%H%M%S')
@@ -119,7 +119,7 @@ try:
                 f.write('\n')
             with open(datadir + '\\double-sweep_params.csv', 'a') as f:
                 f.write('t0={},sample=E0326-2-1,X={},Y={},xpos={},ypos={},mesa={},status=255,measPoints={},comp=0.01,instr=SUSS PA200, originalFileName={}\n'.
-                       format(t0, X, Y, x_subs, y_subs, mesa, points, filename))
+                       format(t0, X, Y, x_next_subs, y_next_subs, mesa, points, filename))
                 # t0=20150717-125846, sample=E0326-2-1,X=5,Y=3,xpos=5921.5,ypos=3031.5,mesa=D56.3,status=255,measPoints=101,comp=0.01,instr=SUSS PA200, originalFileName=double-sweep_20150717-125846_E0326-2-1_X5_Y3_D56.3_0.1V.csv
             if aborted:
                 break
