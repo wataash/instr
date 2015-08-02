@@ -8,96 +8,58 @@ import visa
 from agilent4156c import Agilent4156C
 from suss_pa300 import SussPA300
 
-# user inputs
+# User inputs ------------------------------------------------------------------
+# VISA configurations
 agilent_visa_resource_name = 'GPIB0::18::INSTR'  # 'GPIB1::18::INSTR'
 agilent_visa_timeout_sec = 600  # 10min
 suss_visa_resource_name = 'GPIB0::7::INSTR'  # 'GPIB1::7::INSTR'
 suss_visa_timeout_sec = 10
+# Directory
 datadir = os.environ['appdata'] + r'\Instr\Agilent4156C'
-#
+# Device information
 mesa = 'D56.3'
 distance_between_mesa = 1300
-z_contact = 12000
-z_separete = z_contact - 100
 last_X = 11
 last_Y = 4
+subs_width = 13500  # approximately
+subs_height = 4500  # approx
+# Use theta.py
+# (theta_diagonal, x00_subs, y00_subs) = (21.44501633542317, -890.5720364478045, -878.5148369616054)  # D169
+(theta_diagonal, x00_subs, y00_subs) = (21.44501633542317, -890.5720364478045 + 300, -878.5148369616054)  # D56.3
+# (theta_diagonal, x00_subs, y00_subs) = (21.44501633542317, -890.5720364478045 + 600, -878.5148369616054)  # D16.7
+# (theta_diagonal, x00_subs, y00_subs) = (21.44501633542317, -890.5720364478045 + 900, -878.5148369616054)  # D5.??
+# Measurement configurations
+z_contact = 12000
+z_separate = z_contact - 100
 # meas_XYs = [(1, 1), (3, 2), (1, 2), (2, 1)]
-# meas_XYs = [(X, col) for row in range(1, 5) for col in range(1, 12)]
-# meas_XYs = [(X, 1) for X in range(1, 11)] + [(X, 2) for X in reversed(range(3, 12))] + [(X, 3) for X in range(3, 12)] + [(X, 4) for X in reversed(range(2, 11))]
-meas_XYs = [(X, 2) for X in reversed(range(3, 8))] + [(X, 3) for X in range(3, 12)] + [(X, 4) for X in reversed(range(2, 11))]
+meas_XYs = [(X, 1) for X in range(1, 11)] + [(X, 2) for X in reversed(range(3, 12))] + \
+           [(X, 3) for X in range(3, 12)] + [(X, 4) for X in reversed(range(2, 11))]
 # meas_Vs = [0.1, -0.1, 0.2, -0.2, 0.3, -0.3, -0.4, 0.4, -0.5, 0.5]
 meas_Vs = [0.1, -0.1, 0.2, -0.2, 0.3, -0.3]
-# References for calculating theta
-# ref_XYxy1 = [1, 1, -711, -425]
-# ref_XYxy2 = [11, 4, -13605, -4636]
-# Use theta.py
-(theta_diagonal, x00_subs, y00_subs) = (21.44501633542317, -890.5720364478045, -878.5148369616054)
 
-# Initialize
+# Initialize -------------------------------------------------------------------
 rm = visa.ResourceManager()
 print(rm.list_resources())
 a = Agilent4156C(rm.open_resource(agilent_visa_resource_name), agilent_visa_timeout_sec, False, False)
 s = SussPA300(rm.open_resource(suss_visa_resource_name), suss_visa_timeout_sec, False)
 
-
 def rotate_vector(x, y, theta_deg):
     theta_rad = theta_deg * math.pi/180
     return math.cos(theta_rad)*x - math.sin(theta_rad)*y, math.sin(theta_rad)*x + math.cos(theta_rad)*y
 
-
-# def xy_home_to_subs(x_from_home, y_from_home):
-#     return rotate_vector(-x_from_home, -y_from_home, -theta_deg)
-#
-#
-# def xy_subs_to_home(x_subs, y_subs):
-#     return rotate_vector(-x_subs, -y_subs, theta_deg)
-
-
-# def XY_to_xy_subs(XY, ref_XYxy_from_home):
-#     ref_xy_subs = xy_home_to_subs(ref_XYxy_from_home[2], ref_XYxy_from_home[3])
-#     delta_X = XY[0] - ref_XYxy_from_home[0]
-#     delta_Y = XY[1] - ref_XYxy_from_home[1]
-#     x = ref_xy_subs[0] + delta_X * distance_between_mesa
-#     y = ref_xy_subs[1] + delta_Y * distance_between_mesa
-#     return x, y
-
-# References for calculating theta
-# ref_delta_X = ref_XYxy2[0] - ref_XYxy1[0]
-# ref_delta_Y = ref_XYxy2[1] - ref_XYxy1[1]
-# ref_delta_x = ref_XYxy2[2] - ref_XYxy1[2]
-# ref_delta_y = ref_XYxy2[3] - ref_XYxy1[3]
-
-# Check distance
-# d_ref = math.sqrt(ref_delta_x**2 + ref_delta_y**2)
-# d_calc = math.sqrt((ref_delta_X * distance_between_mesa)**2 + (ref_delta_Y * distance_between_mesa)**2)
-# print('reference distance: {}'.format(d_ref))
-# print('calculated distance: {}'.format(d_calc))
-# if not 0.99 < d_ref/d_calc < 1.01:
-#     print('wrong distance!')
-
-# Calculate theta
-# See document.
-# theta_vector_subs_rad = math.atan(ref_delta_y / ref_delta_x)
-# theta_vector_subs_deg = theta_vector_subs_rad * 180 / math.pi
-# theta_vector_chuck_rad = math.atan(ref_delta_Y / ref_delta_X)
-# theta_vector_chuck_deg = theta_vector_chuck_rad * 180 / math.pi
-# theta_deg = theta_vector_subs_deg - theta_vector_chuck_deg
-
-
-input('Set substrate LD home')
+# Measure ----------------------------------------------------------------------
 try:
-    s.velocity = 10
-    s.moveZ(z_separete - 100)
+    s.velocity = 15
+    s.moveZ(z_separate - 100)
     s.velocity = 1
-    s.move_to_xy_from_home(-x00_subs - last_X * distance_between_mesa,
-                           -y00_subs - last_Y * distance_between_mesa)
-    input('Right click substrate right up edge.')
-    (x_diagonal_from_home, y_diagonal_from_home, _) = s.read_xyz('H')
-    theta_diagonal_tilled = math.atan(y_diagonal_from_home/x_diagonal_from_home) * 180/math.pi
-    theta_pattern_tilled = theta_diagonal_tilled - theta_diagonal
+    input('Set substrate left bottom edge as home.')
+    s.move_to_xy_from_home(-subs_width, -subs_height)
+    input('Right click substrate right top edge.')
+    (x_diagonal_from_home, y_diagonal_from_home, _) = s.read_xyz('H')  # -13803.0, -5211.0, 11800.0
+    theta_diagonal_tilled = math.atan(y_diagonal_from_home/x_diagonal_from_home) * 180/math.pi  # 20.6829
+    theta_pattern_tilled = theta_diagonal_tilled - theta_diagonal  # -0.76216
     for (X, Y) in meas_XYs:
-        s.moveZ(z_separete)  # s.align()
-        # s.move_to_xy_from_home(x_from_home, y_from_home)
+        s.moveZ(z_separate)  # s.align()
         x_next_subs = x00_subs + X * distance_between_mesa
         y_next_subs = y00_subs + Y * distance_between_mesa
         (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
