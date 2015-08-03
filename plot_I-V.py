@@ -1,38 +1,33 @@
-# import sqlite3
-import numpy as np
-import matplotlib.pyplot as plt
-import os
 from collections import defaultdict
+import os
+# import sqlite3
+import matplotlib.pyplot as plt
+import numpy as np
 
-# Suffix 'd': dictionary
+# Prefix 'd': dictionary
 
 datadir = os.environ['appdata'] + r'\Instr\Agilent4156C'
-# conn = sqlite3.connect(datadir + '\\' + 'data.db')
-td = defaultdict(list)
-Id = defaultdict(list)
-Rd = defaultdict(list)  # Resistance
-for fname in [fname_ for fname_ in os.listdir(datadir) if fname_.startswith('ContactTest_2015071')]:
+d_V = defaultdict(list)  # Voltage
+d_I = defaultdict(list)  # Current
+d_R = defaultdict(list)  # Resistance
+for fname in [fname_all for fname_all in os.listdir(datadir) if fname_all.startswith('double-sweep')]:
     with open(datadir + '\\' + fname) as f:
-        ['---\\Instr\\Agilent4156C\\ContactTest',
-         '20150716-190541', 'E0326-2-1', 'X2', 'Y2', 'D5.54', 'p1mV.csv']  # sample
-        X = int(f.name.split('_')[3][1:])
-        Y = int(f.name.split('_')[4][1:])
-        D = float(f.name.split('_')[5][1:])
-        if f.name.split('_')[6][0:4] == 'p1mV':
-            v = 0.001
-        elif f.name.split('_')[6][0:4] == 'n1mV':
-            v = -0.001
+        tmp = f.name.split('_')
+        X = int(tmp[3][1:])
+        Y = int(tmp[4][1:])
+        D = float(tmp[5][1:])
+        V = float(tmp[6].split('V')[0])  # '0.1V.csv' -> 0.1
         read = f.read().split()
-        newt = [float(t) for t in read[0].split(',')]
+        newV = [float(t) for t in read[0].split(',')]
         newI = [float(I) for I in read[1].split(',')]
-        newR = [v/float(current) for current in read[1].split(',') if current != '0']
-        td[(X, Y, D, v)].append(newt)
-        Id[(X, Y, D, v)].append(newI)
-        Rd[(X, Y, D, v)] += newR
+        newR = [V/I for I in newI if I != 0]
+        d_V[(X, Y, D, V)].append(newV)
+        d_I[(X, Y, D, V)].append(newI)
+        d_R[(X, Y, D, V)] += newR
 
-R_ave_d = {}
-for XYDv, value in Rd.items():
-    R_ave_d[XYDv] = np.mean(value)
+d_R_ave = {}
+for XYDv, value in d_R.items():
+    d_R_ave[XYDv] = np.mean(value)
 
 
 
@@ -55,7 +50,7 @@ f.patch.set_alpha(0.)
 for (rowi, coli) in [(rowi, coli) for rowi in range(4) for coli in range(10)]:
     xi = coli + 2
     yi = 4 - rowi
-    for (t, I) in zip(td[(xi, yi, dia, voltage)], Id[(xi, yi, dia, voltage)]):
+    for (t, I) in zip(d_V[(xi, yi, dia, voltage)], d_I[(xi, yi, dia, voltage)]):
         try:
             axarr[rowi, coli].semilogy(t, I)
         except Exception:
@@ -78,7 +73,7 @@ plt.title('E0326-2-1 (X=1: Fe 0nm, X=10: 5.45nm)')
 plt.xlabel('X')
 plt.ylabel('Resistance at 1mV')
 for (area, color_) in zip([5.54, 16.7, 56.3], ('r', 'g', 'b')):
-    for (XYDv, R_ave) in [(XYDv, R_ave) for (XYDv, R_ave) in R_ave_d.items() if XYDv[2] == area and XYDv[3] == 1e-3 and R_ave > 0]:
+    for (XYDv, R_ave) in [(XYDv, R_ave) for (XYDv, R_ave) in d_R_ave.items() if XYDv[2] == area and XYDv[3] == 1e-3 and R_ave > 0]:
         ax.scatter(XYDv[0], R_ave, color=color_)
 plt.show()
 
@@ -91,11 +86,11 @@ plt.title('E0326-2-1 (X=1: Fe 0nm, X=10: 5.45nm)')
 plt.xlabel('X')
 plt.ylabel('Resistance at -1mV')
 for (area, color_) in zip([5.54, 16.7, 56.3], ('r', 'g', 'b')):
-    for (XYDv, R_ave) in [(XYDv, R_ave) for (XYDv, R_ave) in R_ave_d.items() if XYDv[2] == area and XYDv[3] == -1e-3 and R_ave > 0]:
+    for (XYDv, R_ave) in [(XYDv, R_ave) for (XYDv, R_ave) in d_R_ave.items() if XYDv[2] == area and XYDv[3] == -1e-3 and R_ave > 0]:
         ax.scatter(XYDv[0], R_ave, color=color_)
 plt.show()
 
-for (XYDv, R_ave) in [(XYDv, R_ave) for (XYDv, R_ave) in R_ave_d.items() if R_ave <= 0]:
+for (XYDv, R_ave) in [(XYDv, R_ave) for (XYDv, R_ave) in d_R_ave.items() if R_ave <= 0]:
     print('Resistance{0}: {1}'.format(XYDv, R_ave))
 
 print(1)
