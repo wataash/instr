@@ -2,7 +2,7 @@
 Under development.  
 Automates laboratory equipments.  
 This software is released under the MIT License, see LICENSE.txt.  
-Developing environment: python 3.4, pycharm
+Developing environment: python 3.4, PyCharm Professional Edition 4.5.3
 
 ## Requirements
 - python 3.4
@@ -18,5 +18,5 @@ Developing environment: python 3.4, pycharm
 ### I - (V, B, T) measurement
 Not Implemented.
 
-## File Structures
+## Directory Structures
 old_csharp: old code. (this program was written in c# at first)
