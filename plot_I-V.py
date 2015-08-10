@@ -59,9 +59,9 @@ for (rowi, coli) in [(rowi, coli) for rowi in range(numY) for coli in range(numX
     # (09)XminYmin 19(Xmin+1)Ymin ... (99)XmaxYmin
     X = coli + Xmin
     Y = Ymax - rowi
-    # p = axarr[rowi, coli].plot(d_V[(X, Y, dia)], d_J[(X, Y, dia)], 'b')
-    p = axarr[rowi, coli].plot(d_V[(X, Y, dia)], np.gradient(d_J[(X, Y, dia)], d_V[(X, Y, dia)]), 'b')
-    # p = axarr[rowi, coli].plot(d_V[(X, Y, dia)], d_RA[(X, Y, dia)], 'r')
+    # axarr[rowi, coli].plot(d_V[(X, Y, dia)], d_J[(X, Y, dia)], 'b')
+    axarr[rowi, coli].plot(d_V[(X, Y, dia)], np.gradient(d_J[(X, Y, dia)], d_V[(X, Y, dia)]), 'b', linewidth=0.1)
+    # axarr[rowi, coli].plot(d_V[(X, Y, dia)], d_RA[(X, Y, dia)], 'r')
     axarr[rowi, coli].set_xticks([])
     axarr[rowi, coli].set_yticks([])
     axarr[rowi, coli].set_xlim([-0.5, 0.5])
