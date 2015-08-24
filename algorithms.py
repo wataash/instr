@@ -1,3 +1,4 @@
+import math
 from operator import itemgetter
 
 
@@ -50,3 +51,7 @@ if __name__ == '__main__':
         [10, 11, 12, 13, 14]
     ])
     print(ave)
+
+def rotate_vector(x, y, theta_deg):
+    theta_rad = theta_deg * math.pi/180
+    return math.cos(theta_rad)*x - math.sin(theta_rad)*y, math.sin(theta_rad)*x + math.cos(theta_rad)*y

@@ -13,13 +13,16 @@ class SussPA300(BaseInstr):
         self.check_status()
 
     # 20,000um = 2cm
-    __negative_xyz_micron_limit_from_center = (-20000, -20000, 5200)
-    __positive_xyz_micron_limit_from_center = (20000, 20000, 13000)
+    _negative_xyz_micron_limit_from_center = (-20000, -20000, 5200)
+    _positive_xyz_micron_limit_from_center = (20000, 20000, 13000)
 
     def read_xyz(self, coordinate):
         """
         Returns [x, y, z] in micro meter.
-         'H': relative to home,'Z': relative to zero, 'C': relative to center.
+        'H': relative to home,'Z': relative to zero, 'C': relative to center.
+        Debug mode: returns [-2424.0, -2425.5, -100.0] for 'H',
+        [157599.5, 155000.0, 10947.6] for 'Z' and [-0.5, 0.0, 10947.6] for 'C'
+
         :type coordinate: string
         :return: [x, y, z]
         """
@@ -52,18 +55,22 @@ class SussPA300(BaseInstr):
     def _over_limit_from_center(self, xyz):
         """
         self._over_limit_from_center((10, 10)) --> checks only x and y
-        :param xyz:
-        :return:
+        :param xyz: a
+        :return: a
         """
-        for (position, n_lim) in zip(xyz, self.__negative_xyz_micron_limit_from_center):
+        for (position, n_lim) in zip(xyz, self._negative_xyz_micron_limit_from_center):
             if position < n_lim:
                 return True
-        for (position, p_lim) in zip(xyz, self.__positive_xyz_micron_limit_from_center):
+        for (position, p_lim) in zip(xyz, self._positive_xyz_micron_limit_from_center):
             if p_lim < position:
                 return True
         return False
 
     def check_status(self):
+        """
+        Do nothing if debug mode.
+        :return:
+        """
         if self._debug_mode:
             return
         # Query example: '0: PA300PS_ 5 1 1 1 0 0 0 0 0'
@@ -75,6 +82,12 @@ class SussPA300(BaseInstr):
             raise RuntimeError('Over xyz limit.')
 
     def move_to_xy_from_center(self, x, y):
+        """
+        Debug mode: only checks x and y.
+        :param x:
+        :param y:
+        :return:
+        """
         if self._over_limit_from_center((x, y)):
             raise RuntimeError('Exceeds xy limit.')
         if self._debug_mode:
@@ -87,6 +100,12 @@ class SussPA300(BaseInstr):
         self.check_status()
 
     def move_to_xy_from_home(self, x, y):
+        """
+        Debug mode: only checks x and y.
+        :param x:
+        :param y:
+        :return:
+        """
         xy_from_home = self.read_xyz('H')[:2]
         xy_from_center = self.read_xyz('C')[:2]
         self.move_to_xy_from_center(x + xy_from_center[0] - xy_from_home[0], y + xy_from_center[1] - xy_from_home[1])
@@ -100,7 +119,12 @@ class SussPA300(BaseInstr):
         self.check_status()
 
     def moveZ(self, z):
-        if z < self.__negative_xyz_micron_limit_from_center[2] or self.__positive_xyz_micron_limit_from_center[2] < z:
+        """
+        Debug mode: only checks given z
+        :param z:
+        :return:
+        """
+        if z < self._negative_xyz_micron_limit_from_center[2] or self._positive_xyz_micron_limit_from_center[2] < z:
             raise RuntimeError('Parameter exceeds z limit.')
         self.q('MoveChuckZ {} Z Y {}'.format(z, self.velocity))
         self.check_status()

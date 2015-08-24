@@ -167,21 +167,21 @@ class Agilent4156C(BaseInstr):
 
     def double_sweep_from_zero(self, gnd_smu, swp_smu, end_V, step_V, display_I=10e-3, comp_I=10e-3):
         """
-        Returns float V[], float I[], bool aborted.
         You can write v, i, _ = double_sweep_from_zero(...).
-        :param gnd_smu:
+
+        :param gnd_smu: SMU number for ground
         :type gnd_smu: int
-        :param swp_smu:
+        :param swp_smu: SMU number for bias
         :type swp_smu: int
-        :param end_V:
+        :param end_V: End voltage
         :type end_V: float
-        :param step_V:
+        :param step_V: Voltage step
         :type step_V: float
-        :param display_I:
+        :param display_I: Current range to display on 4156C
         :type display_I: float
-        :param comp_I:
+        :param comp_I: a
         :type comp_I: float
-        :return:
+        :return: Vs, Is, aborted. Debug mode: returns [0,0.001,0.002,0.001,0], [0,1e-6,2e-6,1e-6,0], False
         :rtype: (list of float, list of float, bool)
         """
         if display_I <= 0:
@@ -193,7 +193,6 @@ class Agilent4156C(BaseInstr):
         if number_of_step > 1001:
             raise RuntimeError('Number of step exceeds 1001. (see the manual of 4156C)')
         if self._debug_mode:
-            print('debug: return dummy data')
             return [0,0.001,0.002,0.001,0], [0,1e-6,2e-6,1e-6,0], False
         is_P = end_V > 0  # is positive sweep
         self.w('*RST')

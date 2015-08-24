@@ -1,99 +1,105 @@
+import json
 import math
 import os
+import random
 import time
 import traceback
 
 import visa
 
+import algorithms
+import configure
 from agilent4156c import Agilent4156C
 from suss_pa300 import SussPA300
 
-# User inputs ------------------------------------------------------------------
-# VISA configurations
-agilent_visa_resource_name = 'GPIB0::18::INSTR'  # 'GPIB1::18::INSTR'
-agilent_visa_timeout_sec = 600  # 10min
-suss_visa_resource_name = 'GPIB0::7::INSTR'  # 'GPIB1::7::INSTR'
-suss_visa_timeout_sec = 10
-# Directory
-datadir = os.environ['appdata'] + r'\Instr\Agilent4156C'
-# Device information
-sample = 'E0325t-1-1'
-mesa = 'D56.3'
-distance_between_mesa = 1300
-last_X = 4
-last_Y = 4
-subs_width = 6500  # approximately
-subs_height = 6500  # approx
-# Use theta.py
-(theta_diagonal, x00_subs, y00_subs) = (43.9395886298078, -353.9133081057827, -23.85219452421734)  # D169
-if mesa == 'D56.3':
-    x00_subs += 300
-if mesa == 'D16.7':
-    x00_subs += 600
-if mesa == 'D5.54':
-    x00_subs += 900
-# Measurement configurations
-z_contact = 12000
-z_separate = z_contact - 100
-# meas_XYs = [(1, 1), (3, 2), (1, 2), (2, 1)]
-meas_XYs = [(X, 1) for X in range(3, last_X+1)] + [(X, 2) for X in reversed(range(1, last_X+1))] + \
-           [(X, 3) for X in range(1, last_X+1)] + [(X, 4) for X in reversed(range(1, last_X+1))]
-# meas_Vs = [0.1, -0.1, 0.2, -0.2, 0.3, -0.3, -0.4, 0.4, -0.5, 0.5]
-meas_Vs = [0.1, -0.1]
+
+# Configurations ---------------------------------------------------------------
+# If develop on desktop (without instruments), make this true.
+debug_mode = True
+
+if debug_mode:
+    try:
+        with open(os.environ['appdata'] + r'\instr\Agilent4156C.json') as f:
+            conf = json.load(f)
+    except FileNotFoundError:
+        with open('dummy_data/Agilent4156C.json') as f:
+            conf = json.load(f)
+else:
+    raise NotImplementedError  # TODO
+    # config = configure.main()
+
 
 # Initialize -------------------------------------------------------------------
-rm = visa.ResourceManager()
-print(rm.list_resources())
-a = Agilent4156C(rm.open_resource(agilent_visa_resource_name), agilent_visa_timeout_sec, False, False)
-s = SussPA300(rm.open_resource(suss_visa_resource_name), suss_visa_timeout_sec, False)
+if debug_mode:
+    a = Agilent4156C(None, conf['agilent_visa_timeout_sec'], False, True)
+    s = SussPA300(None, conf['suss_visa_timeout_sec'], True)
+else:
+    rm = visa.ResourceManager()
+    print(rm.list_resources())
+    a = Agilent4156C(
+        rm.open_resource(conf['agilent_visa_resource_name']), conf['agilent_visa_timeout_sec'], False, False)
+    s = SussPA300(rm.open_resource(
+        conf['suss_visa_resource_name']), conf['suss_visa_timeout_sec'], False, False)
 
-def rotate_vector(x, y, theta_deg):
-    theta_rad = theta_deg * math.pi/180
-    return math.cos(theta_rad)*x - math.sin(theta_rad)*y, math.sin(theta_rad)*x + math.cos(theta_rad)*y
 
 # Measure ----------------------------------------------------------------------
 first_measurement = True
 try:
+    # Get dimensions
     s.velocity = 25
-    s.moveZ(z_separate - 100)
+    s.moveZ(conf['z_separate'] - 100)
     s.velocity = 1
-    input('Set substrate left bottom edge as home.')
-    s.move_to_xy_from_home(-subs_width, -subs_height)
-    input('Right click substrate right top edge.')
-    (x_diagonal_from_home, y_diagonal_from_home, _) = s.read_xyz('H')  # -13803.0, -5211.0, 11800.0
-    theta_diagonal_tilled = math.atan(y_diagonal_from_home/x_diagonal_from_home) * 180/math.pi  # 20.6829
-    theta_pattern_tilled = theta_diagonal_tilled - theta_diagonal  # -0.76216
-    for (X, Y) in meas_XYs:
-        s.moveZ(z_separate)  # s.align()
-        x_next_subs = x00_subs + X * distance_between_mesa
-        y_next_subs = y00_subs + Y * distance_between_mesa
-        (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
+    if not debug_mode:
+        input('Set substrate left bottom edge as home.')
+        s.move_to_xy_from_home(-conf['subs_width'], -conf['subs_height'])
+        input('Right click substrate right top edge.')
+        (x_diagonal_from_home, y_diagonal_from_home, _) = s.read_xyz('H')
+    else:
+        (x_diagonal_from_home, y_diagonal_from_home, _) = \
+            (-conf['subs_width'] - random.gauss(0, 50), -conf['subs_height'] - random.gauss(0, 50), 0)
+
+    # Calculate theta
+    theta_diagonal_tilled = math.atan(y_diagonal_from_home/x_diagonal_from_home) * 180/math.pi
+    theta_pattern_tilled = theta_diagonal_tilled - conf['theta_diagonal']
+    print(theta_pattern_tilled)
+
+    # Measure I-Vs
+    for (X, Y) in conf['meas_XYs']:
+        s.moveZ(conf['z_separate'])  # s.align()
+        x_next_subs = conf['x00_subs'] + X * conf['distance_between_mesa']
+        y_next_subs = conf['y00_subs'] + Y * conf['distance_between_mesa']
+        (x_next_from_home, y_next_from_home) = algorithms.rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
         s.move_to_xy_from_home(x_next_from_home, y_next_from_home)
-        s.moveZ(z_contact)  # s.contact()
+        s.moveZ(conf['z_contact'])  # s.contact()
         if first_measurement:
-            input('Contact the prober.')
+            if debug_mode:
+                pass
+            else:
+                input('Contact the prober.')
             first_measurement = False
-        for V in meas_Vs:
+        for V in conf['meas_Vs']:
             t0 = time.strftime('%Y%m%d-%H%M%S')
             Vs, Is, aborted = a.double_sweep_from_zero(2, 1, V, V/1000, 10e-6, 10e-3)
-            filename = 'double-sweep_{}_{}_X{}_Y{}_{}_{}V.csv'.format(t0, sample, X, Y, mesa, V)
+            filename = 'double-sweep_{}_{}_X{}_Y{}_{}_{}V.csv'.format(t0, conf['sample'], X, Y, conf['mesa'], V)
             points = len(Vs)
-            with open(datadir + '\\' + filename, 'w') as f:
+            with open(conf['datadir'] + '\\' + filename, 'w') as f:
                 Vs = [str(elem) for elem in Vs]
                 Vs = ','.join(Vs)
-                f.write(Vs)  # V, V, V, ...
+                f.write(Vs)  # V, V, V, ... TODO: transpose
                 f.write('\n')
                 Is = [str(elem) for elem in Is]
                 Is = ','.join(Is)
-                f.write(Is)  # I, I, I, ...
+                f.write(Is)  # I, I, I, ... TODO: transpose
                 f.write('\n')
-            with open(datadir + '\\double-sweep_params.csv', 'a') as f:
+            with open(conf['datadir'] + '\\double-sweep_params.csv', 'a') as f:
                 f.write('t0={},sample=E0326-2-1,X={},Y={},xpos={},ypos={},mesa={},status=255,measPoints={},comp=0.01,instr=SUSS PA300, originalFileName={}\n'.
-                       format(t0, X, Y, x_next_subs, y_next_subs, mesa, points, filename))
+                       format(t0, X, Y, x_next_subs, y_next_subs, conf['mesa'], points, filename))
                 # t0=20150717-125846, sample=E0326-2-1,X=5,Y=3,xpos=5921.5,ypos=3031.5,mesa=D56.3,status=255,measPoints=101,comp=0.01,instr=SUSS PA300, originalFileName=double-sweep_20150717-125846_E0326-2-1_X5_Y3_D56.3_0.1V.csv
             if aborted:
                 break
 except:
+    if debug_mode:
+        raise
     with open(os.path.expanduser('~') + r'\Dropbox\work\0instr_report.txt', 'w') as f:
         f.write(traceback.format_exc() + '\n')
         del Vs, Is  # Because they are too long
