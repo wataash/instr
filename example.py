@@ -1,7 +1,7 @@
 import visa
 
-from agilent4156c import Agilent4156C
-from suss_pa300 import SussPA300
+from lib.agilent4156c import Agilent4156C
+from lib.suss_pa300 import SussPA300
 
 agilent_visa_resource_name = 'GPIB0::18::INSTR'
 agilent_visa_timeout_sec = 600  # 10min

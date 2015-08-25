@@ -2,19 +2,19 @@ import json
 import math
 import os
 import random
+import sqlite3
 import time
 import traceback
 
 import visa
 
-import algorithms
-import configure
-from agilent4156c import Agilent4156C
-from suss_pa300 import SussPA300
+from lib.algorithms import rotate_vector
+from lib.agilent4156c import Agilent4156C
+from lib.suss_pa300 import SussPA300
 
 
 # Configurations ---------------------------------------------------------------
-# If develop on desktop (without instruments), make this true.
+# Set True while desktop development (without instruments).
 debug_mode = True
 
 if debug_mode:
@@ -24,36 +24,75 @@ if debug_mode:
     except FileNotFoundError:
         with open('dummy_data/Agilent4156C.json') as f:
             conf = json.load(f)
+    conf['sample'] = 'debug sample'
+    conf['meas_XYs'] = [(1, 1), (2, 3)]
 else:
     raise NotImplementedError  # TODO
     # config = configure.main()
 
+conf['compliance'] = 10e-3  # todo move
+
 
 # Initialize -------------------------------------------------------------------
 if debug_mode:
-    a = Agilent4156C(None, conf['agilent_visa_timeout_sec'], False, True)
-    s = SussPA300(None, conf['suss_visa_timeout_sec'], True)
+    agi_rsrc = None
+    suss_rsrc = None
 else:
     rm = visa.ResourceManager()
     print(rm.list_resources())
-    a = Agilent4156C(
-        rm.open_resource(conf['agilent_visa_resource_name']), conf['agilent_visa_timeout_sec'], False, False)
-    s = SussPA300(rm.open_resource(
-        conf['suss_visa_resource_name']), conf['suss_visa_timeout_sec'], False, False)
+    agi_rsrc = rm.open_resource(conf['agilent_visa_resource_name'])
+    suss_rsrc = rm.open_resource(conf['suss_visa_resource_name'])
+
+agi = Agilent4156C(agi_rsrc, conf['agilent_visa_timeout_sec'], False, debug_mode)
+suss = SussPA300(suss_rsrc, conf['suss_visa_timeout_sec'], debug_mode)
+
+
+# Connect to database ----------------------------------------------------------
+conn = sqlite3.connect(conf['datadir'] + '/database.sqlite3')
+c = conn.cursor()
+
+# Create tables if not exist
+try:
+    c.execute('''CREATE TABLE `parameters` (
+        `t0`	TEXT NOT NULL UNIQUE,
+        `sample`	TEXT NOT NULL,
+        `X`	INTEGER,
+        `Y`	INTEGER,
+        `xpos`	REAL,
+        `ypos`	REAL,
+        `mesa`	TEXT,
+        `status`	INTEGER,
+        `measPoints`	INTEGER,
+        `compliance`	REAL,
+        `voltage`	REAL,
+        `lib`	TEXT,
+        PRIMARY KEY(t0)
+    );''')
+except sqlite3.OperationalError:
+    print('table parameters already exists')
+try:
+    c.execute('''CREATE TABLE `IV` (
+        `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+        `t0`	TEXT NOT NULL,
+        `V`	REAL,
+        `I`	REAL
+    );''')
+except sqlite3.OperationalError:
+    print('table I-V already exists')
 
 
 # Measure ----------------------------------------------------------------------
-first_measurement = True
 try:
+    first_measurement = True
     # Get dimensions
-    s.velocity = 25
-    s.moveZ(conf['z_separate'] - 100)
-    s.velocity = 1
+    suss.velocity = 25
+    suss.moveZ(conf['z_separate'] - 100)
+    suss.velocity = 1
     if not debug_mode:
         input('Set substrate left bottom edge as home.')
-        s.move_to_xy_from_home(-conf['subs_width'], -conf['subs_height'])
+        suss.move_to_xy_from_home(-conf['subs_width'], -conf['subs_height'])
         input('Right click substrate right top edge.')
-        (x_diagonal_from_home, y_diagonal_from_home, _) = s.read_xyz('H')
+        (x_diagonal_from_home, y_diagonal_from_home, _) = suss.read_xyz('H')
     else:
         (x_diagonal_from_home, y_diagonal_from_home, _) = \
             (-conf['subs_width'] - random.gauss(0, 50), -conf['subs_height'] - random.gauss(0, 50), 0)
@@ -65,51 +104,50 @@ try:
 
     # Measure I-Vs
     for (X, Y) in conf['meas_XYs']:
-        s.moveZ(conf['z_separate'])  # s.align()
+        suss.moveZ(conf['z_separate'])  # s.align()
         x_next_subs = conf['x00_subs'] + X * conf['distance_between_mesa']
         y_next_subs = conf['y00_subs'] + Y * conf['distance_between_mesa']
-        (x_next_from_home, y_next_from_home) = algorithms.rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
-        s.move_to_xy_from_home(x_next_from_home, y_next_from_home)
-        s.moveZ(conf['z_contact'])  # s.contact()
+        (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
+        suss.move_to_xy_from_home(x_next_from_home, y_next_from_home)
+        suss.moveZ(conf['z_contact'])  # s.contact()
         if first_measurement:
-            if debug_mode:
-                pass
-            else:
+            if not debug_mode:
                 input('Contact the prober.')
             first_measurement = False
         for V in conf['meas_Vs']:
-            t0 = time.strftime('%Y%m%d-%H%M%S')
-            Vs, Is, aborted = a.double_sweep_from_zero(2, 1, V, V/1000, 10e-6, 10e-3)
-            filename = 'double-sweep_{}_{}_X{}_Y{}_{}_{}V.csv'.format(t0, conf['sample'], X, Y, conf['mesa'], V)
+            t0 = time.strftime('%Y-%m-%d %H:%M:%S')
+            Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, V/1000, 10e-6, conf['compliance'])
+            # filename = 'double-sweep_{}_{}_X{}_Y{}_{}_{}V.csv'.format(t0, conf['sample'], X, Y, conf['mesa'], V)
             points = len(Vs)
-            with open(conf['datadir'] + '\\' + filename, 'w') as f:
-                Vs = [str(elem) for elem in Vs]
-                Vs = ','.join(Vs)
-                f.write(Vs)  # V, V, V, ... TODO: transpose
-                f.write('\n')
-                Is = [str(elem) for elem in Is]
-                Is = ','.join(Is)
-                f.write(Is)  # I, I, I, ... TODO: transpose
-                f.write('\n')
-            with open(conf['datadir'] + '\\double-sweep_params.csv', 'a') as f:
-                f.write('t0={},sample=E0326-2-1,X={},Y={},xpos={},ypos={},mesa={},status=255,measPoints={},comp=0.01,instr=SUSS PA300, originalFileName={}\n'.
-                       format(t0, X, Y, x_next_subs, y_next_subs, conf['mesa'], points, filename))
-                # t0=20150717-125846, sample=E0326-2-1,X=5,Y=3,xpos=5921.5,ypos=3031.5,mesa=D56.3,status=255,measPoints=101,comp=0.01,instr=SUSS PA300, originalFileName=double-sweep_20150717-125846_E0326-2-1_X5_Y3_D56.3_0.1V.csv
+            c.execute('''INSERT INTO parameters values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (t0, conf['sample'], X, Y, x_next_subs, y_next_subs,
+                       conf['mesa'], 255, points, conf['compliance'], V,
+                       'SUSS PA300 + Agilent 4156C'))
+            tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
+            c.executemany('''INSERT INTO IV(t0, V, I) values(?, ?, ?)''', tmp)
+
             if aborted:
                 break
+
 except:
-    if debug_mode:
-        raise
-    with open(os.path.expanduser('~') + r'\Dropbox\work\0instr_report.txt', 'w') as f:
-        f.write(traceback.format_exc() + '\n')
-        del Vs, Is  # Because they are too long
-        f.write('\n---------- globals() ----------\n{}\n'.format(globals()))
-        f.write('\n---------- locals() ----------\n{}\n'.format(locals()))
+    if not debug_mode:
+        with open(os.path.expanduser('~') + r'\Dropbox\work\0instr_report.txt', 'w') as f:
+            f.write(traceback.format_exc() + '\n')
+            del Vs, Is  # Because they are too long
+            f.write('\n---------- globals() ----------\n{}\n'.format(globals()))
+            f.write('\n---------- locals() ----------\n{}\n'.format(locals()))
     raise
+
 else:
-    with open(os.path.expanduser('~') + r'\Dropbox\work\instr_report.txt', 'w') as f:
-        f.write('Measurement done.\n')
-        f.write('\n---------- locals() ----------\n{}\n'.format(locals()))
-        f.write('\n---------- globals() ----------\n{}\n'.format(globals()))
+    if not debug_mode:
+        with open(os.path.expanduser('~') + r'\Dropbox\work\0instr_report.txt', 'w') as f:
+            f.write('Measurement done.\n')
+            f.write('\n---------- locals() ----------\n{}\n'.format(locals()))
+            f.write('\n---------- globals() ----------\n{}\n'.format(globals()))
+
+finally:
+    # Commit and close database
+    conn.commit()
+    c.close()
 
 print(0)

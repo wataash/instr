@@ -69,3 +69,21 @@ conf['meas_XYs'] = [(X, 1) for X in range(3, conf['max_X']+1)] + [(X, 2) for X i
 
 # meas_Vs = [0.1, -0.1, 0.2, -0.2, 0.3, -0.3, -0.4, 0.4, -0.5, 0.5]
 conf['meas_Vs'] = [0.1, -0.1]
+
+
+
+# data write
+# with open(conf['datadir'] + '\\' + filename, 'w') as f:
+#     Vs = [str(elem) for elem in Vs]
+#     Vs = ','.join(Vs)
+#     f.write(Vs)  # V, V, V, ... TODO: transpose
+#     f.write('\n')
+#     Is = [str(elem) for elem in Is]
+#     Is = ','.join(Is)
+#     f.write(Is)  # I, I, I, ... TODO: transpose
+#     f.write('\n')
+
+# with open(conf['datadir'] + '\\double-sweep_params.csv', 'a') as f:
+#     f.write('t0={},sample=E0326-2-1,X={},Y={},xpos={},ypos={},mesa={},status=255,measPoints={},comp=0.01,instr=SUSS PA300, originalFileName={}\n'.
+#            format(t0, X, Y, x_next_subs, y_next_subs, conf['mesa'], points, filename))
+    # t0=20150717-125846, sample=E0326-2-1,X=5,Y=3,xpos=5921.5,ypos=3031.5,mesa=D56.3,status=255,measPoints=101,comp=0.01,instr=SUSS PA300, originalFileName=double-sweep_20150717-125846_E0326-2-1_X5_Y3_D56.3_0.1V.csv

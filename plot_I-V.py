@@ -5,7 +5,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from algorithms import ave_xyz
+from lib.algorithms import ave_xyz
+
 
 # Prefix 'd': dictionary
 

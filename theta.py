@@ -1,6 +1,9 @@
 import math
+
 import visa
-from suss_pa300 import SussPA300
+
+from lib.suss_pa300 import SussPA300
+
 
 # Coordinates: from home
 # Up prober !!!!

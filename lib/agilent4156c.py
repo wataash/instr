@@ -1,6 +1,6 @@
 import math
 
-from base_instr import BaseInstr
+from lib.base_instr import BaseInstr
 
 
 class Agilent4156C(BaseInstr):
