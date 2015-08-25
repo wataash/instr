@@ -5,7 +5,9 @@ import tkinter
 import tkinter.filedialog
 import os
 
+
 conf = defaultdict(str)
+os.makedirs(os.environ['appdata'] + r'\instr', exist_ok=True)
 
 try:
     with open(os.environ['appdata'] + r'\instr\Agilent4156C.json') as f:
