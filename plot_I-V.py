@@ -16,17 +16,17 @@ Xmin = 1
 Xmax = 11
 Ymin = 1
 Ymax = 4
-datadir = os.environ['appdata'] + r'\Instr\Agilent4156C'
+data_dir = os.environ['appdata'] + r'\Instr\Agilent4156C'
 
 area = math.pi * (dia/2)**2  # um^2
 d_V = defaultdict(list)  # Voltage
 d_J = defaultdict(list)  # Current density (A/um^2)
 d_RA = defaultdict(list)  # Resistance area product (ohm um^2)
-for fname in [fname_all for fname_all in os.listdir(datadir) if
+for fname in [fname_all for fname_all in os.listdir(data_dir) if
               fname_all.startswith('double-sweep') and
               'D{}'.format(dia) in fname_all and
               sample in fname_all]:
-    with open(datadir + '\\' + fname) as f:
+    with open(data_dir + '\\' + fname) as f:
         tmp = f.name.split('_')
         X = int(tmp[3][1:])
         Y = int(tmp[4][1:])

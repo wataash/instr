@@ -3,12 +3,12 @@ import os
 
 # User inputs ------------------------------------------------------------------
 # VISA configurations
-agilent_visa_resource_name = 'GPIB0::18::INSTR'  # 'GPIB1::18::INSTR'
-agilent_visa_timeout_sec = 600  # 10min
-suss_visa_resource_name = 'GPIB0::7::INSTR'  # 'GPIB1::7::INSTR'
+agi_visa_rsrc_name = 'GPIB0::18::INSTR'  # 'GPIB1::18::INSTR'
+agi_visa_timeout_sec = 600  # 10min
+suss_visa_rsrc_name = 'GPIB0::7::INSTR'  # 'GPIB1::7::INSTR'
 suss_visa_timeout_sec = 10
 # Directory
-datadir = os.environ['appdata'] + r'\instr\Agilent4156C'
+data_dir = os.environ['appdata'] + r'\instr\Agilent4156C'
 # Device information
 sample = 'sample # 2'
 mesa = 'D56.3'
@@ -39,13 +39,13 @@ meas_Vs = [0.1, -0.1]
 
 
 # VISA configurations
-conf['agilent_visa_resource_name'] = 'GPIB0::18::INSTR'  # 'GPIB1::18::INSTR'
-conf['agilent_visa_timeout_sec'] = 600  # 10min
-conf['suss_visa_resource_name'] = 'GPIB0::7::INSTR'  # 'GPIB1::7::INSTR'
+conf['agilent_visa_rsrc_name'] = 'GPIB0::18::INSTR'  # 'GPIB1::18::INSTR'
+conf['agi_visa_timeout_sec'] = 600  # 10min
+conf['suss_visa_rsrc_name'] = 'GPIB0::7::INSTR'  # 'GPIB1::7::INSTR'
 conf['suss_visa_timeout_sec'] = 10
 
 # Directory
-conf['datadir'] = os.environ['appdata'] + r'\Instr\Agilent4156C'
+conf['data_dir'] = os.environ['appdata'] + r'\Instr\Agilent4156C'
 
 # Device information
 conf['sample'] = 'E0325t-1-1'
@@ -73,7 +73,7 @@ conf['meas_Vs'] = [0.1, -0.1]
 
 
 # data write
-# with open(conf['datadir'] + '\\' + filename, 'w') as f:
+# with open(conf['data_dir'] + '\\' + filename, 'w') as f:
 #     Vs = [str(elem) for elem in Vs]
 #     Vs = ','.join(Vs)
 #     f.write(Vs)  # V, V, V, ... TODO: transpose
@@ -83,7 +83,7 @@ conf['meas_Vs'] = [0.1, -0.1]
 #     f.write(Is)  # I, I, I, ... TODO: transpose
 #     f.write('\n')
 
-# with open(conf['datadir'] + '\\double-sweep_params.csv', 'a') as f:
+# with open(conf['data_dir'] + '\\double-sweep_params.csv', 'a') as f:
 #     f.write('t0={},sample=E0326-2-1,X={},Y={},xpos={},ypos={},mesa={},status=255,measPoints={},comp=0.01,instr=SUSS PA300, originalFileName={}\n'.
 #            format(t0, X, Y, x_next_subs, y_next_subs, conf['mesa'], points, filename))
     # t0=20150717-125846, sample=E0326-2-1,X=5,Y=3,xpos=5921.5,ypos=3031.5,mesa=D56.3,status=255,measPoints=101,comp=0.01,instr=SUSS PA300, originalFileName=double-sweep_20150717-125846_E0326-2-1_X5_Y3_D56.3_0.1V.csv

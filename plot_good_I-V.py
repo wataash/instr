@@ -8,7 +8,7 @@ import numpy as np
 
 sample = 'E0326-2-1'
 dia = 169
-datadir = os.environ['appdata'] + r'\Instr\Agilent4156C'
+data_dir = os.environ['appdata'] + r'\Instr\Agilent4156C'
 good_XYs = [(6,1), (7,1), (8,1), (10,1), (11,1),
             (7,2), (8,2), (9,2), (10,2),
             (2,3), (3,3), (8,3), (9,3), (10,3), (11,3),
@@ -17,12 +17,12 @@ good_XYs_str = ['X{}_Y{}'.format(X, Y) for (X, Y) in good_XYs]
 d_V = defaultdict(list)  # Voltage
 d_I = defaultdict(list)  # Current
 d_R = defaultdict(list)  # Resistance
-for fname in [fname_all for fname_all in os.listdir(datadir) if
+for fname in [fname_all for fname_all in os.listdir(data_dir) if
               fname_all.startswith('double-sweep') and
               'D{}'.format(dia) in fname_all and
               sample in fname_all and
               any(XY in fname_all for XY in good_XYs_str)]:
-    with open(datadir + '\\' + fname) as f:
+    with open(data_dir + '\\' + fname) as f:
         tmp = f.name.split('_')
         X = int(tmp[3][1:])
         Y = int(tmp[4][1:])

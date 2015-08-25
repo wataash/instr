@@ -14,8 +14,8 @@ def rotate_vector(x, y, theta_deg):
     return math.cos(theta_rad)*x - math.sin(theta_rad)*y, math.sin(theta_rad)*x + math.cos(theta_rad)*y
 
 # user inputs
-suss_visa_resource_name = 'GPIB0::7::INSTR'
-# suss_visa_resource_name = 'GPIB1::7::INSTR'
+suss_visa_rsrc_name = 'GPIB0::7::INSTR'
+# suss_visa_rsrc_name = 'GPIB1::7::INSTR'
 suss_visa_timeout_sec = 60
 #
 z_contact = 12000
@@ -26,7 +26,7 @@ last_Y = 4
 
 rm = visa.ResourceManager()
 print(rm.list_resources())
-suss_resource = rm.open_resource(suss_visa_resource_name)
+suss_resource = rm.open_resource(suss_visa_rsrc_name)
 suss = SussPA300(suss_resource, suss_visa_timeout_sec)
 
 suss.velocity = 25

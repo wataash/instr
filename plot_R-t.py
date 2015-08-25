@@ -6,13 +6,13 @@ import numpy as np
 
 # Prefix 'd': dictionary
 
-datadir = os.environ['appdata'] + r'\Instr\Agilent4156C'
-# conn = sqlite3.connect(datadir + '\\' + 'data.db')
+data_dir = os.environ['appdata'] + r'\Instr\Agilent4156C'
+# conn = sqlite3.connect(data_dir + '\\' + 'data.db')
 d_t = defaultdict(list)  # Time
 d_I = defaultdict(list)  # Current
 d_R = defaultdict(list)  # Resistance
-for fname in [fname_all for fname_all in os.listdir(datadir) if fname_all.startswith('ContactTest_2015071')]:
-    with open(datadir + '\\' + fname) as f:
+for fname in [fname_all for fname_all in os.listdir(data_dir) if fname_all.startswith('ContactTest_2015071')]:
+    with open(data_dir + '\\' + fname) as f:
         tmp = f.name.split('_')
         X = int(tmp[3][1:])
         Y = int(tmp[4][1:])
