@@ -8,6 +8,7 @@ import traceback
 import visa
 
 from lib.algorithms import rotate_vector
+from lib.algorithms import zigzag_XY
 from lib.agilent4156c import Agilent4156C
 from lib.suss_pa300 import SussPA300
 import configure
@@ -22,8 +23,8 @@ SUSS_debug_mode = False
 conf = configure.main()
 if debug_mode:
     conf['sample'] = 'debug sample'
-conf['meas_XYs'] = [(X, 1) for X in range(1, conf['max_X']+1)] + [(X, 2) for X in reversed(range(1, conf['max_X']+1))] + \
-           [(X, 3) for X in range(1, conf['max_X']+1)] + [(X, 4) for X in reversed(range(1, conf['max_X']+1))]
+    conf['meas_XYs'] = zigzag_XY(1, 9, 17, 17)
+
 
 # Initialize -------------------------------------------------------------------
 if debug_mode:
