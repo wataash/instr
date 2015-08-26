@@ -14,16 +14,16 @@ import configure
 
 
 # Set True while desktop development (without instruments).
-debug_mode = False
-SUSS_debug_mode = False
+debug_mode = True
+SUSS_debug_mode = True
 
 # Configurations ---------------------------------------------------------------
 
 conf = configure.main()
 if debug_mode:
     conf['sample'] = 'debug sample'
-conf['meas_XYs'] = [(X, 1) for X in range(1, conf['max_X']+1)] + [(X, 2) for X in reversed(range(1, conf['max_X']+1))] + \
-           [(X, 3) for X in range(1, conf['max_X']+1)] + [(X, 4) for X in reversed(range(1, conf['max_X']+1))]
+    conf['meas_XYs'] = [(1, 1), (2, 3)]
+
 
 # Initialize -------------------------------------------------------------------
 if debug_mode:
