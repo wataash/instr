@@ -21,8 +21,8 @@ suss_visa_timeout_sec = 60
 z_contact = 12000
 z_separate = z_contact - 100
 distance_between_mesa = 1300
-last_X = 11
-last_Y = 4
+last_X = 17
+last_Y = 17
 
 rm = visa.ResourceManager()
 print(rm.list_resources())

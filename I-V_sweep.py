@@ -1,4 +1,3 @@
-import json
 import math
 import os
 import random
@@ -15,16 +14,16 @@ import configure
 
 
 # Set True while desktop development (without instruments).
-debug_mode = True
-
+debug_mode = False
+SUSS_debug_mode = False
 
 # Configurations ---------------------------------------------------------------
 
 conf = configure.main()
 if debug_mode:
     conf['sample'] = 'debug sample'
-    conf['meas_XYs'] = [(1, 1), (2, 3)]
-
+conf['meas_XYs'] = [(X, 1) for X in range(1, conf['max_X']+1)] + [(X, 2) for X in reversed(range(1, conf['max_X']+1))] + \
+           [(X, 3) for X in range(1, conf['max_X']+1)] + [(X, 4) for X in reversed(range(1, conf['max_X']+1))]
 
 # Initialize -------------------------------------------------------------------
 if debug_mode:
@@ -33,36 +32,23 @@ if debug_mode:
 else:
     rm = visa.ResourceManager()
     print(rm.list_resources())
-    agi_rsrc = rm.open_resource(conf['agilent_visa_rsrc_name'])
-    suss_rsrc = rm.open_resource(conf['suss_visa_rsrc_name'])
+    agi_rsrc = rm.open_resource(conf['agi_visa_rsrc_name'])
+    if SUSS_debug_mode:
+        suss_rsrc = None
+    else:
+        suss_rsrc = rm.open_resource(conf['suss_visa_rsrc_name'])
 
 agi = Agilent4156C(agi_rsrc, conf['agi_visa_timeout_sec'], False, debug_mode)
-suss = SussPA300(suss_rsrc, conf['suss_visa_timeout_sec'], debug_mode)
+suss = SussPA300(suss_rsrc, conf['suss_visa_timeout_sec'], debug_mode or SUSS_debug_mode)
 
 
 # Connect to database ----------------------------------------------------------
+if not os.path.exists(conf['data_dir']):
+    os.makedirs(conf['data_dir'])
 conn = sqlite3.connect(conf['data_dir'] + '/database.sqlite3')
 c = conn.cursor()
 
 # Create tables if not exist
-try:
-    c.execute('''CREATE TABLE `parameters` (
-        `t0`	TEXT NOT NULL,
-        `sample`	TEXT NOT NULL,
-        `X`	INTEGER,
-        `Y`	INTEGER,
-        `xpos`	REAL,
-        `ypos`	REAL,
-        `mesa`	TEXT,
-        `status`	INTEGER,
-        `measPoints`	INTEGER,
-        `compliance`	REAL,
-        `voltage`	REAL,
-        `lib`	TEXT,
-        PRIMARY KEY(t0)
-    );''')
-except sqlite3.OperationalError:
-    print('table parameters already exists')
 try:
     c.execute('''CREATE TABLE `parameters` (
             `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
@@ -78,9 +64,18 @@ try:
             `compliance`	REAL,
             `voltage`	REAL,
             `instrument`	TEXT
-        );;''')
+        );''')
 except sqlite3.OperationalError:
-    print('table I-V already exists')
+    print('Failed to create table "parameters" (maybe already exists)')
+try:
+    c.execute('''CREATE TABLE `IV` (
+            `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            `t0`	TEXT NOT NULL,
+            `V`	REAL,
+            `I`	REAL
+        );''')
+except sqlite3.OperationalError:
+    print('Failed to create table "I-V" (maybe already exists)')
 
 
 # Measure ----------------------------------------------------------------------
@@ -106,7 +101,10 @@ try:
 
     # Measure I-Vs
     for (X, Y) in conf['meas_XYs']:
-        suss.moveZ(conf['z_separate'])  # s.align()
+        if first_measurement:
+            suss.moveZ(conf['z_separate'] - 300)
+        else:
+            suss.moveZ(conf['z_separate'])  # s.align()
         x_next_subs = conf['x00_subs'] + X * conf['distance_between_mesa']
         y_next_subs = conf['y00_subs'] + Y * conf['distance_between_mesa']
         (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
@@ -128,6 +126,7 @@ try:
                       'SUSS PA300 + Agilent 4156C'))
             tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
             c.executemany('''INSERT INTO IV(t0, V, I) values(?, ?, ?)''', tmp)
+            conn.commit()
 
             if aborted:
                 break
@@ -150,7 +149,7 @@ else:
 
 finally:
     # Commit and close database
-    conn.commit()
+    # conn.commit()
     c.close()
 
 print(0)

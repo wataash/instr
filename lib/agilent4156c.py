@@ -2,6 +2,7 @@ import math
 
 from lib.base_instr import BaseInstr
 
+# TODO: Y1: logI, Y2: log R
 
 class Agilent4156C(BaseInstr):
     def __init__(self, instr_resource, timeout_sec, use_us_commands, debug_mode=False):
