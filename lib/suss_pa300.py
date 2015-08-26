@@ -13,8 +13,8 @@ class SussPA300(BaseInstr):
         self.check_status()
 
     # 20,000um = 2cm
-    _negative_xyz_micron_limit_from_center = (-20000, -20000, 5200)
-    _positive_xyz_micron_limit_from_center = (20000, 20000, 13000)
+    _negative_xyz_micron_limit_from_center = (-30000, -30000, 5200)
+    _positive_xyz_micron_limit_from_center = (30000, 30000, 13000)
 
     def read_xyz(self, coordinate):
         """

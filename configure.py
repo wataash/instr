@@ -5,6 +5,7 @@ import tkinter
 import tkinter.filedialog
 import os
 
+# TODO: fill sample data if config file not exist
 
 conf = defaultdict(str)
 os.makedirs(os.environ['appdata'] + r'\instr', exist_ok=True)
