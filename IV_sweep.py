@@ -1,4 +1,4 @@
-import math
+﻿import math
 import os
 import random
 import sqlite3
@@ -46,15 +46,15 @@ suss = SussPA300(suss_rsrc, conf['suss_visa_timeout_sec'], debug_mode or SUSS_de
 # Connect to database ----------------------------------------------------------
 if not os.path.exists(conf['data_dir']):
     os.makedirs(conf['data_dir'])
-conn = sqlite3.connect(conf['data_dir'] + '/database.sqlite3')
-c = conn.cursor()
+sqlite3_connection = sqlite3.connect(conf['data_dir'] + '/database.sqlite3')
+cursor = sqlite3_connection.cursor()
 
 # Create tables if not exist
 try:
-    c.execute('''CREATE TABLE `parameters` (
+    cursor.execute('''CREATE TABLE `parameters` (
             `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             `t0`	TEXT NOT NULL,
-            `sample`	REAL NOT NULL,
+            `sample`	TEXT NOT NULL,
             `X`	INTEGER,
             `Y`	INTEGER,
             `xpos`	REAL,
@@ -69,9 +69,9 @@ try:
 except sqlite3.OperationalError:
     print('Failed to create table "parameters" (maybe already exists)')
 try:
-    c.execute('''CREATE TABLE `IV` (
+    cursor.execute('''CREATE TABLE `IV` (
             `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            `t0`	TEXT NOT NULL,
+            `param_id`	INTEGER NOT NULL,
             `V`	REAL,
             `I`	REAL
         );''')
@@ -102,7 +102,8 @@ try:
 
     # Measure I-Vs
     for (X, Y) in conf['meas_XYs']:
-        suss.moveZ(conf['z_separate'])  # s.align()
+        if first_measurement:
+            suss.moveZ(conf['z_separate'])  # s.align()
         x_next_subs = conf['x00_subs'] + X * conf['distance_between_mesa']
         y_next_subs = conf['y00_subs'] + Y * conf['distance_between_mesa']
         (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
@@ -117,14 +118,15 @@ try:
             Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, V/1000, 10e-6, conf['compliance'])
             # filename = 'double-sweep_{}_{}_X{}_Y{}_{}_{}V.csv'.format(t0, conf['sample'], X, Y, conf['mesa'], V)
             points = len(Vs)
-            c.execute('''INSERT INTO parameters(t0, sample, X, Y, xpos, ypos, mesa, status, measPoints, compliance, voltage, instrument)
-                             values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (t0, conf['sample'], X, Y, x_next_subs, y_next_subs,
-                      conf['mesa'], 255, points, conf['compliance'], V,
-                      'SUSS PA300 + Agilent 4156C'))
-            tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
-            c.executemany('''INSERT INTO IV(t0, V, I) values(?, ?, ?)''', tmp)
-            conn.commit()
+            # TODO: change format
+            #cursor.execute('''INSERT INTO parameters(t0, sample, X, Y, xpos, ypos, mesa, status, measPoints, compliance, voltage, instrument)
+            #                 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            #          (t0, conf['sample'], X, Y, x_next_subs, y_next_subs,
+            #          conf['mesa'], 255, points, conf['compliance'], V,
+            #          'SUSS PA300 + Agilent 4156C'))
+            #tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
+            #cursor.executemany('''INSERT INTO IV(t0, V, I) values(?, ?, ?)''', tmp)
+            #sqlite3_connection.commit()
 
             if aborted:
                 break
@@ -146,8 +148,7 @@ else:
             f.write('\n---------- globals() ----------\n{}\n'.format(globals()))
 
 finally:
-    # Commit and close database
-    # conn.commit()
-    c.close()
+    # Close the database
+    cursor.close()
 
 print(0)

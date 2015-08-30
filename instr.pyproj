@@ -5,7 +5,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56607090-6be0-449e-b724-5c88fb9d41df}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>test_local.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -22,12 +23,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="LICENSE.txt" />
+    <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="archive.py" />
     <Compile Include="configure.py" />
     <Compile Include="example.py" />
-    <Compile Include="I-V_sweep.py" />
+    <Compile Include="IV_sweep.py" />
     <Compile Include="lib\agilent4156c.py" />
     <Compile Include="lib\algorithms.py" />
     <Compile Include="lib\base_instr.py" />
@@ -36,12 +38,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="plot_examples.py" />
-    <Compile Include="plot_good_I-V.py" />
-    <Compile Include="plot_I-V.py" />
-    <Compile Include="plot_R-t.py" />
-    <Compile Include="test_local.py">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="plot_good_IV.py" />
+    <Compile Include="plot_IV.py" />
+    <Compile Include="plot_Rt.py" />
     <Compile Include="theta.py" />
     <Compile Include="txt_to_sql.py" />
     <Compile Include="__init__.py" />
