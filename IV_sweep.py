@@ -93,7 +93,7 @@ try:
     first_measurement = True
     # Get dimensions
     suss.velocity = 25
-    suss.moveZ(conf['z_separate'] - 100)
+    suss.separate()  # TODO: test
     suss.velocity = 1
     if not debug_mode:
         input('Set substrate left bottom edge as home.')
@@ -111,13 +111,13 @@ try:
 
     # Measure I-Vs
     for (X, Y) in conf['meas_XYs']:
-        if first_measurement:
-            suss.moveZ(conf['z_separate'])  # s.align()
+        if not first_measurement:
+            suss.align()  # TODO: test
         x_next_subs = conf['x00_subs'] + X * conf['distance_between_mesa']
         y_next_subs = conf['y00_subs'] + Y * conf['distance_between_mesa']
         (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
         suss.move_to_xy_from_home(x_next_from_home, y_next_from_home)
-        suss.moveZ(conf['z_contact'])  # s.contact()
+        suss.contact()  # TODO: test
         if first_measurement:
             if not debug_mode:
                 input('Contact the prober.')
