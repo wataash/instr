@@ -1,13 +1,15 @@
-import math
+﻿import math
 
-from lib.base_instr import BaseInstr
+import visa
+
+from base_instr import BaseInstr
 
 # TODO: Y1: logI, Y2: log R
 
 class Agilent4156C(BaseInstr):
-    def __init__(self, instr_resource, timeout_sec, use_us_commands, debug_mode=False):
+    def __init__(self, instr_rsrc, timeout_sec, use_us_commands, debug_mode=False):
         self._debug_mode = debug_mode
-        super().__init__(instr_resource, timeout_sec, self._debug_mode)
+        super().__init__(instr_rsrc, timeout_sec, self._debug_mode)
         self._use_us_commands = use_us_commands
         if debug_mode:
             return
@@ -42,7 +44,7 @@ class Agilent4156C(BaseInstr):
 
             self.w(":PAGE:CHAN:SMU{}:VNAM '{}';INAM '{}';MODE {};FUNC {};".
                    format(smu_num, V_name, I_name, _mode, _func))
-        return self.q('SYST:ERR?')
+        self.q_err()
 
     def disable_all_units(self, *except_units):
         """desc
@@ -60,29 +62,27 @@ class Agilent4156C(BaseInstr):
                 if (i + 1) in except_units:
                     continue
                 self.w(":PAGE:CHAN:{}:DIS".format(units[i]))
-        return self.q('SYST:ERR?')
+        self.q_err()
 
-    def set_Y2(self, Y2name, is_log_scale=False):
+    def set_Y(self, Y1_name, Y1_log_scale=False, Y2_name=None, Y2_log_scale=False):
         """
-        desc
-        :param Y2name:
-        :type Y2name: str
-        :param is_log_scale:
-        :type is_log_scale: bool
-        :return:
         :rtype: str
         """
         if self._debug_mode:
-            print('debug: skip set_Y2')
+            print('Debug: skip set_Y')
         if self._use_us_commands:
             raise NotImplementedError
         else:
-            self.w(":PAGE:DISP:GRAP:Y2:NAME '{}';".format(Y2name))
-            if is_log_scale:
+            self.w(":PAGE:DISP:GRAP:Y1:NAME '{}';".format(Y1_name))
+            if Y2_name is not None:
+                self.w(":PAGE:DISP:GRAP:Y2:NAME '{}';".format(Y2_name))
+            if Y1_log_scale:
+                self.w(":PAGE:DISP:GRAP:Y1:SCAL LOG;")
+            if Y2_log_scale:
                 self.w(":PAGE:DISP:GRAP:Y2:SCAL LOG;")
-        return self.q('SYST:ERR?')
+        self.q_err()
 
-    def configure_display(self, x_min, x_max, y1_min, y1_max, y2_min=1e-15, y2_max: str=10e-3):
+    def configure_display(self, x_min, x_max, y1_min=1e-15, y1_max=1, y2_min=1e-15, y2_max=1):
         """
         desc
         :param x_min:
@@ -111,23 +111,23 @@ class Agilent4156C(BaseInstr):
             self.w(":PAGE:DISP:SET:GRAP:Y1:MAX {};".format(y1_max))
             self.w(":PAGE:DISP:SET:GRAP:Y2:MIN {};".format(y2_min))
             self.w(":PAGE:DISP:SET:GRAP:Y2:MAX {};".format(y2_max))
-        return self.q('SYST:ERR?')
+        self.q_err()
+
+    def set_user_func(self, name, unit, definition):
+        self.w(":page:chan:ufun:def '{}','{}','{}'".format(name, unit, definition))
+        self.q_err()
+        
+    def q_err(self):
+        # TODO: test
+        tmp = self.q("SYST:ERR?")
+        tmp = tmp.split(',')
+        if tmp[0] != '+0':
+            raise RuntimeError('Error on Agilent 4156C.')
 
     def contact_test(self, gnd_smu, bias_smu, time_interval_second,
-                     applyV=1e-3, compI=10e-3,
-                     meas_time_second=60, points=0, y1min=0, y1max=1e-3):
+                     applyV=1e-3, compI=10e-3, meas_time_second=60, points=0):
         """
         Returns float[] times, float[] currents
-        :param gnd_smu:
-        :param bias_smu:
-        :param time_interval_second:
-        :param applyV:
-        :param compI:
-        :param meas_time_second:
-        :param points:
-        :param y1min:
-        :param y1max:
-        :return:
         :rtype: list of float, list of float
         """
         if self._debug_mode:
@@ -150,8 +150,9 @@ class Agilent4156C(BaseInstr):
             self.w(":PAGE:MEAS:SAMP:IINT {};POIN {};".format(time_interval_second, points))
             self.w(":PAGE:MEAS:SAMP:CONS:SMU{} {};".format(bias_smu, applyV))
             self.w(":PAGE:MEAS:SAMP:CONS:SMU{}:COMP {};".format(bias_smu, compI))
-        self.set_Y2("I{}".format(bias_smu), True)
-        self.configure_display(0, meas_time_second, y1min, y1max, 1e-12, 100e-6)  # 1 Gohm, 10 ohm at 1mV
+        self.set_user_func('R', 'ohm', 'V{0}/I{0}'.format(bias_smu))
+        self.set_Y("I{}".format(bias_smu), True, 'R', True)
+        self.configure_display(0, meas_time_second, 1e-15, compI, 1, 1e12)
         if self._use_us_commands:
             raise NotImplementedError
         else:
@@ -197,9 +198,7 @@ class Agilent4156C(BaseInstr):
             return [0,0.001,0.002,0.001,0], [0,1e-6,2e-6,1e-6,0], False
         is_P = end_V > 0  # is positive sweep
         self.w('*RST')
-        query_resp = self.q('SYST:ERR?')
-        if query_resp != '+0,"No error"\n':
-            raise RuntimeError('Agilent 4156C error: {}'.format(query_resp))
+        self.q_err()
         self.disable_all_units(gnd_smu, swp_smu)
         self.configure_smu(gnd_smu, 3, 3)
         self.configure_smu(swp_smu, 1, 1)
@@ -229,3 +228,9 @@ class Agilent4156C(BaseInstr):
         if len(Vs) != len(Is):
             raise Exception
         return Vs, Is, aborted
+
+if __name__ == '__main__':
+    rm = visa.ResourceManager()
+    a_rsrc = rm.open_resource('GPIB0::18::INSTR')
+    a = Agilent4156C(a_rsrc, 600, False)
+    a.contact_test(2, 1, 10e-3)

@@ -5,14 +5,14 @@ class SussPA300(BaseInstr):
     """
     Unit of length: um
     """
-    def __init__(self, instr_resource, timeout_sec, debug_mode=False):
+    def __init__(self, instr_rsrc, timeout_sec, debug_mode=False):
         self._debug_mode = debug_mode
-        super().__init__(instr_resource, timeout_sec, self._debug_mode)
+        super().__init__(instr_rsrc, timeout_sec, self._debug_mode)
         self._negative_xyz_limit_from_center = (-30000, -30000, 5200)  # 20,000um = 2cm
         self._positive_xyz_limit_from_center = (30000, 30000, 13000)
         self._z_contact = 12000
-        self._z_align = _z_contact - 100
-        self._z_separate = _z_contact - 300
+        self._z_align = self._z_contact - 100
+        self._z_separate = self._z_contact - 300
         if self._debug_mode:
             return
         if self.q('*IDN?') != 'Suss MicroTec Test Systems GmbH,ProberBench PC,0,0':
@@ -57,10 +57,10 @@ class SussPA300(BaseInstr):
 
     def _over_limit_from_center(self, xyz):
         """self._over_limit_from_center((10, 10)) --> checks only x and y"""
-        for (position, n_lim) in zip(xyz, self.self._negative_xyz_limit_from_center):
+        for (position, n_lim) in zip(xyz, self._negative_xyz_limit_from_center):
             if position < n_lim:
                 return True
-        for (position, p_lim) in zip(xyz, self.self._positive_xyz_limit_from_center):
+        for (position, p_lim) in zip(xyz, self._positive_xyz_limit_from_center):
             if p_lim < position:
                 return True
         return False
@@ -114,7 +114,7 @@ class SussPA300(BaseInstr):
 
     def moveZ(self, z):
         """Debug mode: only checks given z"""
-        if z < self.self._negative_xyz_limit_from_center[2] or self.self._positive_xyz_limit_from_center[2] < z:
+        if z < self._negative_xyz_limit_from_center[2] or self._positive_xyz_limit_from_center[2] < z:
             raise RuntimeError('Parameter exceeds z limit.')
         self.q('MoveChuckZ {} Z Y {}'.format(z, self.velocity))
         self.check_status()

@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56607090-6be0-449e-b724-5c88fb9d41df}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>IV_sweep.py</StartupFile>
+    <StartupFile>lib\agilent4156c.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -27,6 +27,9 @@
   <ItemGroup>
     <Compile Include="archive.py" />
     <Compile Include="configure.py" />
+    <Compile Include="contact_test.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="example.py" />
     <Compile Include="IV_sweep.py" />
     <Compile Include="lib\agilent4156c.py" />

@@ -21,7 +21,7 @@ SUSS_debug_mode = False
 # Configurations ---------------------------------------------------------------
 
 conf = configure.main()
-conf['meas_XYs'] = zigzag_XY(3, 8, 17, 17, False)
+conf['meas_XYs'] = zigzag_XY(1, 1, 17, 17, True)
 if debug_mode:
     conf['sample'] = 'debug sample'
 
@@ -112,7 +112,7 @@ try:
     # Measure I-Vs
     for (X, Y) in conf['meas_XYs']:
         if not first_measurement:
-            suss.align()  # TODO: test
+            suss.align()  # Already separate if first # TODO: test
         x_next_subs = conf['x00_subs'] + X * conf['distance_between_mesa']
         y_next_subs = conf['y00_subs'] + Y * conf['distance_between_mesa']
         (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)

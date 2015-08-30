@@ -1,4 +1,4 @@
-import math
+﻿import math
 
 import visa
 
@@ -26,8 +26,8 @@ last_Y = 17
 
 rm = visa.ResourceManager()
 print(rm.list_resources())
-suss_resource = rm.open_resource(suss_visa_rsrc_name)
-suss = SussPA300(suss_resource, suss_visa_timeout_sec)
+suss_rsrc = rm.open_resource(suss_visa_rsrc_name)
+suss = SussPA300(suss_rsrc, suss_visa_timeout_sec)
 
 suss.velocity = 25
 suss.moveZ(z_separate - 1000)
