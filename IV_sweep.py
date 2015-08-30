@@ -51,29 +51,31 @@ cursor = sqlite3_connection.cursor()
 
 # Create tables if not exist
 try:
-    cursor.execute('''CREATE TABLE `parameters` (
-            `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            `t0`	TEXT NOT NULL,
-            `sample`	TEXT NOT NULL,
-            `X`	INTEGER,
-            `Y`	INTEGER,
-            `xpos`	REAL,
-            `ypos`	REAL,
-            `mesa`	TEXT,
-            `status`	INTEGER,
-            `measPoints`	INTEGER,
-            `compliance`	REAL,
-            `voltage`	REAL,
-            `instrument`	TEXT
+    cursor.execute('''
+        CREATE TABLE `parameters` (
+	        `t0`	INTEGER NOT NULL,
+	        `sample`	REAL NOT NULL,
+	        `X`	INTEGER,
+	        `Y`	INTEGER,
+	        `xpos`	REAL,
+	        `ypos`	NUMERIC,
+	        `mesa`	TEXT,
+	        `status`	INTEGER,
+	        `measPoints`	INTEGER,
+	        `compliance`	REAL,
+	        `voltage`	REAL,
+	        `instrument`	TEXT,
+	        PRIMARY KEY(t0)
         );''')
 except sqlite3.OperationalError:
     print('Failed to create table "parameters" (maybe already exists)')
 try:
-    cursor.execute('''CREATE TABLE `IV` (
-            `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            `param_id`	INTEGER NOT NULL,
-            `V`	REAL,
-            `I`	REAL
+    cursor.execute('''
+        CREATE TABLE `IV` (
+	        `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+	        `t0`	INTEGER NOT NULL,
+	        `V`	REAL,
+	        `I`	REAL
         );''')
 except sqlite3.OperationalError:
     print('Failed to create table "I-V" (maybe already exists)')
@@ -114,7 +116,8 @@ try:
                 input('Contact the prober.')
             first_measurement = False
         for V in conf['meas_Vs']:
-            t0 = time.strftime('%Y-%m-%d %H:%M:%S')
+            # TODO: change format
+            #t0 = time.strftime('%Y-%m-%d %H:%M:%S')
             Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, V/1000, 10e-6, conf['compliance'])
             # filename = 'double-sweep_{}_{}_X{}_Y{}_{}_{}V.csv'.format(t0, conf['sample'], X, Y, conf['mesa'], V)
             points = len(Vs)
