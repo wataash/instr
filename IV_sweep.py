@@ -79,6 +79,13 @@ try:
         );''')
 except sqlite3.OperationalError:
     print('Failed to create table "I-V" (maybe already exists)')
+try:
+    cursor.execute('''CREATE VIEW all_view AS
+        SELECT IV.*, parameters.* FROM parameters
+        INNER JOIN IV ON parameters.t0=IV.t0
+        ''')
+except sqlite3.OperationalError:
+    print('Failed to create view "all_view" (maybe already exists)')
 
 
 # Measure ----------------------------------------------------------------------
@@ -116,21 +123,18 @@ try:
                 input('Contact the prober.')
             first_measurement = False
         for V in conf['meas_Vs']:
-            # TODO: change format
-            #t0 = time.strftime('%Y-%m-%d %H:%M:%S')
+            t0 = int(time.strftime('%Y%m%d%H%M%S'))  # 20150830203015
             Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, V/1000, 10e-6, conf['compliance'])
-            # filename = 'double-sweep_{}_{}_X{}_Y{}_{}_{}V.csv'.format(t0, conf['sample'], X, Y, conf['mesa'], V)
             points = len(Vs)
-            # TODO: change format
-            #cursor.execute('''INSERT INTO parameters(t0, sample, X, Y, xpos, ypos, mesa, status, measPoints, compliance, voltage, instrument)
-            #                 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-            #          (t0, conf['sample'], X, Y, x_next_subs, y_next_subs,
-            #          conf['mesa'], 255, points, conf['compliance'], V,
-            #          'SUSS PA300 + Agilent 4156C'))
-            #tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
-            #cursor.executemany('''INSERT INTO IV(t0, V, I) values(?, ?, ?)''', tmp)
-            #sqlite3_connection.commit()
-
+            cursor.execute('''INSERT INTO parameters VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
+                             (t0, conf['sample'], X, Y, x_next_subs, y_next_subs,
+                              conf['mesa'], 255, points, conf['compliance'], V,
+                              'SUSS PA300 + Agilent 4156C'))
+            tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
+            cursor.executemany('''INSERT INTO IV(t0, V, I) VALUES(?, ?, ?)''', tmp)  # IV.id: autofilled
+            sqlite3_connection.commit()
+            if debug_mode:
+                time.sleep(1)  # To avoid duplicates of "t0" in database
             if aborted:
                 break
 
