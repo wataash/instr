@@ -1,4 +1,4 @@
-from collections import defaultdict
+﻿from collections import defaultdict
 import inspect
 import json
 import tkinter
@@ -52,14 +52,10 @@ class Application(tkinter.Frame):
         self.entries['y00_subs'] = self.label_and_entry('y00_subs (calculated by theta.py)', conf['y00_subs'])
 
         self.title('Measurement configurations')
-        self.entries['z_contact'] = self.label_and_entry('z_contact', conf['z_contact'])
-        self.entries['z_separate'] = self.label_and_entry('z_separate', conf['z_separate'])
         self.entries['compliance'] = self.label_and_entry('Compliance current [A]', conf['compliance'])
+        # TODO: zigzag or one-by-one
         self.entries['meas_XYs'] = self.label_and_entry('XYs to measure (X0 Y0, X1 Y1, ...)', self.meas_XYs_to_input_form(conf['meas_XYs']))
         self.entries['meas_Vs'] = self.label_and_entry('Voltages [V] (V0 V1 ...)', self.meas_Vs_to_input_form(conf['meas_Vs']))
-
-        self.title('template')
-        self.entries['template'] = self.label_and_entry('template label', 'template entry')
 
         self.OK_button = tkinter.Button(self, text='OK', command=self.command_OK)
         self.OK_button.grid(row=self._irow, columnspan=2, padx=self._pad, pady=self._pad, sticky=tkinter.W+tkinter.E)
@@ -184,4 +180,4 @@ def main():
     return conf
 
 if __name__ == '__main__':
-    main()
+    tmp = main()
