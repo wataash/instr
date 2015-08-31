@@ -2,7 +2,10 @@
 
 import visa
 
-from base_instr import BaseInstr
+if __name__ == "__main__" and __package__ is None:
+    from base_instr import BaseInstr
+else:
+    from lib.base_instr import BaseInstr
 
 # TODO: Y1: logI, Y2: log R
 
@@ -17,9 +20,10 @@ class Agilent4156C(BaseInstr):
             raise RuntimeError('Failed to connect to Agilent 4156C.')
         self.w('*RST')  # Restore default configuration
         self.w('*CLS')  # Clear query buffer
+        self.q_err()
 
     def configure_smu(self, smu_num, mode, func, V_name=None, I_name=None):
-        """ Description here
+        """
         :param smu_num: 1234
         :param mode: 1: V, 2: I, 3: common
         :param func: 1: VAR1, 2: VAR2, 3: CONSTANT, 4: VAR1'
@@ -118,7 +122,7 @@ class Agilent4156C(BaseInstr):
         self.q_err()
         
     def q_err(self):
-        # TODO: test
+        """Check error"""
         tmp = self.q("SYST:ERR?")
         tmp = tmp.split(',')
         if tmp[0] != '+0':
@@ -167,9 +171,11 @@ class Agilent4156C(BaseInstr):
                 raise RuntimeError
             return times, currents
 
-    def double_sweep_from_zero(self, gnd_smu, swp_smu, end_V, step_V, display_I=10e-3, comp_I=10e-3):
+    def double_sweep_from_zero(self, gnd_smu, swp_smu, end_V, step_V=None, comp_I=10e-3):
+        # TODO: test
         """
         You can write v, i, _ = double_sweep_from_zero(...).
+        If step_V is None -> #step = 1001 (max), step_V = end_V/1001
 
         :param gnd_smu: SMU number for ground
         :type gnd_smu: int
@@ -179,29 +185,32 @@ class Agilent4156C(BaseInstr):
         :type end_V: float
         :param step_V: Voltage step
         :type step_V: float
-        :param display_I: Current range to display on 4156C
-        :type display_I: float
         :param comp_I: a
         :type comp_I: float
         :return: Vs, Is, aborted. Debug mode: returns [0,0.001,0.002,0.001,0], [0,1e-6,2e-6,1e-6,0], False
         :rtype: (list of float, list of float, bool)
         """
-        if display_I <= 0:
-            raise ValueError()
-        if math.copysign(1, end_V) != math.copysign(1, step_V):
-            print('Warning: using step_V {} instead of {}.'.format(-step_V, step_V))
-            step_V = -step_V
-        number_of_step = end_V/step_V
-        if number_of_step > 1001:
-            raise RuntimeError('Number of step exceeds 1001. (see the manual of 4156C)')
+        if step_V is None:
+            step_V = end_V/1001
+        else:
+            # Make sure that end_V and step_V have same sign. (+ or -)
+            if math.copysign(1, end_V) != math.copysign(1, step_V):
+                print('Warning: using step_V {} instead of {}.'.format(-step_V, step_V))
+                step_V = -step_V
+            number_of_step = end_V/step_V
+            if number_of_step > 1001:
+                raise RuntimeError('Number of step exceeds 1001. (see the manual of 4156C)')
+
         if self._debug_mode:
             return [0,0.001,0.002,0.001,0], [0,1e-6,2e-6,1e-6,0], False
+        
         is_P = end_V > 0  # is positive sweep
         self.w('*RST')
         self.q_err()
         self.disable_all_units(gnd_smu, swp_smu)
         self.configure_smu(gnd_smu, 3, 3)
         self.configure_smu(swp_smu, 1, 1)
+
         if self._use_us_commands:
             raise NotImplementedError
         else:
@@ -211,13 +220,14 @@ class Agilent4156C(BaseInstr):
             self.w(":PAGE:MEAS:VAR1:STEP {};".format(step_V))
             # TODO: hold time, deley time
             # TODO: stop at abnormal
-        self.set_Y2("I{}".format(swp_smu), True)
+
+        self.set_user_func('R', 'ohm', 'V{1}/I{1}'.format(swp_smu))
+        self.set_Y("I{}".format(swp_smu), True, 'R', True)
         self.configure_display(0 if is_P else end_V,
                                end_V if is_P else 0,
-                               0 if is_P else -display_I,
-                               display_I if is_P else 0,
-                               1e-15 if is_P else -10e-3,
-                               10e-3 if is_P else -1e-15)
+                               0 if is_P else -comp_I,
+                               comp_I if is_P else 0,
+                               1, 1e12)
         self.w(':PAGE:SCON:MEAS:SING')
         self.q('*OPC?')
         Vs = [float(V) for V in self.q(":FORM:DATA ASC;:DATA? 'V{}';".format(swp_smu)).split(',')]
@@ -233,4 +243,5 @@ if __name__ == '__main__':
     rm = visa.ResourceManager()
     a_rsrc = rm.open_resource('GPIB0::18::INSTR')
     a = Agilent4156C(a_rsrc, 600, False)
-    a.contact_test(2, 1, 10e-3)
+    a.double_sweep_from_zero(2, 1, 100e-3, 1e-3)  # TODO: test
+    #a.contact_test(2, 1, 10e-3)
