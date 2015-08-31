@@ -93,7 +93,7 @@ try:
     first_measurement = True
     # Get dimensions
     suss.velocity = 25
-    suss.separate()  # TODO: test
+    suss.separate()
     suss.velocity = 1
     if not debug_mode:
         input('Set substrate left bottom edge as home.')
@@ -112,19 +112,19 @@ try:
     # Measure I-Vs
     for (X, Y) in conf['meas_XYs']:
         if not first_measurement:
-            suss.align()  # Already separate if first # TODO: test
+            suss.align()  # Already separate if first
         x_next_subs = conf['x00_subs'] + X * conf['distance_between_mesa']
         y_next_subs = conf['y00_subs'] + Y * conf['distance_between_mesa']
         (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
         suss.move_to_xy_from_home(x_next_from_home, y_next_from_home)
-        suss.contact()  # TODO: test
+        suss.contact()
         if first_measurement:
             if not debug_mode:
                 input('Contact the prober.')
             first_measurement = False
         for V in conf['meas_Vs']:
             t0 = int(time.strftime('%Y%m%d%H%M%S'))  # 20150830203015
-            Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, V/1000, 10e-6, conf['compliance'])
+            Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, None, conf['compliance'])
             points = len(Vs)
             cursor.execute('''INSERT INTO parameters VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
                              (t0, conf['sample'], X, Y, x_next_subs, y_next_subs,

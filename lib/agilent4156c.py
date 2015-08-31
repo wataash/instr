@@ -7,7 +7,6 @@ if __name__ == "__main__" and __package__ is None:
 else:
     from lib.base_instr import BaseInstr
 
-# TODO: Y1: logI, Y2: log R
 
 class Agilent4156C(BaseInstr):
     def __init__(self, instr_rsrc, timeout_sec, use_us_commands, debug_mode=False):
@@ -172,7 +171,6 @@ class Agilent4156C(BaseInstr):
             return times, currents
 
     def double_sweep_from_zero(self, gnd_smu, swp_smu, end_V, step_V=None, comp_I=10e-3):
-        # TODO: test
         """
         You can write v, i, _ = double_sweep_from_zero(...).
         If step_V is None -> #step = 1001 (max), step_V = end_V/1001
@@ -191,7 +189,7 @@ class Agilent4156C(BaseInstr):
         :rtype: (list of float, list of float, bool)
         """
         if step_V is None:
-            step_V = end_V/1001
+            step_V = end_V/1000
         else:
             # Make sure that end_V and step_V have same sign. (+ or -)
             if math.copysign(1, end_V) != math.copysign(1, step_V):
@@ -221,7 +219,7 @@ class Agilent4156C(BaseInstr):
             # TODO: hold time, deley time
             # TODO: stop at abnormal
 
-        self.set_user_func('R', 'ohm', 'V{1}/I{1}'.format(swp_smu))
+        self.set_user_func('R', 'ohm', 'V{0}/I{0}'.format(swp_smu))
         self.set_Y("I{}".format(swp_smu), True, 'R', True)
         self.configure_display(0 if is_P else end_V,
                                end_V if is_P else 0,
@@ -243,5 +241,5 @@ if __name__ == '__main__':
     rm = visa.ResourceManager()
     a_rsrc = rm.open_resource('GPIB0::18::INSTR')
     a = Agilent4156C(a_rsrc, 600, False)
-    a.double_sweep_from_zero(2, 1, 100e-3, 1e-3)  # TODO: test
-    #a.contact_test(2, 1, 10e-3)
+    #a.double_sweep_from_zero(2, 1, 100e-3, 1e-3)
+    a.contact_test(2, 1, 10e-3)
