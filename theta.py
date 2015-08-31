@@ -1,4 +1,4 @@
-import math
+﻿import math
 
 import visa
 
@@ -21,13 +21,13 @@ suss_visa_timeout_sec = 60
 z_contact = 12000
 z_separate = z_contact - 100
 distance_between_mesa = 1300
-last_X = 11
-last_Y = 4
+last_X = 17
+last_Y = 17
 
 rm = visa.ResourceManager()
 print(rm.list_resources())
-suss_resource = rm.open_resource(suss_visa_rsrc_name)
-suss = SussPA300(suss_resource, suss_visa_timeout_sec)
+suss_rsrc = rm.open_resource(suss_visa_rsrc_name)
+suss = SussPA300(suss_rsrc, suss_visa_timeout_sec)
 
 suss.velocity = 25
 suss.moveZ(z_separate - 1000)

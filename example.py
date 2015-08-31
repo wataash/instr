@@ -1,4 +1,4 @@
-import visa
+﻿import visa
 
 from lib.agilent4156c import Agilent4156C
 from lib.suss_pa300 import SussPA300
@@ -12,12 +12,12 @@ suss_visa_timeout_sec = 10
 rm = visa.ResourceManager()
 print(rm.list_resources())
 
-a_resource = rm.open_resource(agi_visa_rsrc_name)
-print(a_resource.query('*IDN?'))
-a = Agilent4156C(a_resource, agi_visa_timeout_sec, False)
+a_rsrc = rm.open_resource(agi_visa_rsrc_name)
+print(a_rsrc.query('*IDN?'))
+a = Agilent4156C(a_rsrc, agi_visa_timeout_sec, False)
 print(a.q('*IDN?'))
 
-s_resource = rm.open_resource(suss_visa_rsrc_name)
+suss_rsrc = rm.open_resource(suss_visa_rsrc_name)
 s = SussPA300(rm.open_resource(suss_visa_rsrc_name), suss_visa_timeout_sec, False)
 
 # Measurement
