@@ -15,8 +15,8 @@ import configure
 
 
 # Set True while desktop development (without instruments).
-debug_mode = False
-SUSS_debug_mode = False
+debug_mode = True
+SUSS_debug_mode = True
 
 # Configurations ---------------------------------------------------------------
 
@@ -54,7 +54,7 @@ try:
     cursor.execute('''
         CREATE TABLE `parameters` (
 	        `t0`	INTEGER NOT NULL,
-	        `sample`	REAL NOT NULL,
+	        `sample`	TEXT NOT NULL,
 	        `X`	INTEGER,
 	        `Y`	INTEGER,
 	        `xpos`	REAL,
