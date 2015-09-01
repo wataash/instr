@@ -54,7 +54,7 @@ try:
     cursor.execute('''
         CREATE TABLE `parameters` (
 	        `t0`	INTEGER NOT NULL,
-	        `sample`	REAL NOT NULL,
+	        `sample`	TEXT NOT NULL,
 	        `X`	INTEGER,
 	        `Y`	INTEGER,
 	        `xpos`	REAL,
