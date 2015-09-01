@@ -1,75 +1,89 @@
-from collections import defaultdict
+﻿from collections import defaultdict
+import json
 import math
 import os
+import sqlite3
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from lib.algorithms import ave_xyz
-
 
 # Prefix 'd': dictionary
 
-sample = 'E0326-2-1'
-dia = 169
-Xmin = 1
-Xmax = 11
-Ymin = 1
-Ymax = 4
-data_dir = os.environ['appdata'] + r'\Instr\Agilent4156C'
 
-area = math.pi * (dia/2)**2  # um^2
-d_V = defaultdict(list)  # Voltage
-d_J = defaultdict(list)  # Current density (A/um^2)
-d_RA = defaultdict(list)  # Resistance area product (ohm um^2)
-for fname in [fname_all for fname_all in os.listdir(data_dir) if
-              fname_all.startswith('double-sweep') and
-              'D{}'.format(dia) in fname_all and
-              sample in fname_all]:
-    with open(data_dir + '\\' + fname) as f:
-        tmp = f.name.split('_')
-        X = int(tmp[3][1:])
-        Y = int(tmp[4][1:])
-        D = float(tmp[5][1:])
-        read = f.read().split()
-        newVs = [float(t) for t in read[0].split(',')]
-        newJs = [float(J)/area for J in read[1].split(',')]
-        # newRs = [(V/J if abs(V) > 0.010 else None) for (V, J) in zip(newVs, newJs)]
-        newRs = [(V/J if abs(V) > 0.010 else 0) for (V, J) in zip(newVs, newJs)]
-        (newVs, newJs, newRs) = ave_xyz((newVs, newJs, newRs))  # Take average
-        d_V[(X, Y, D)] += newVs
-        d_J[(X, Y, D)] += newJs
-        d_RA[(X, Y, D)] += newRs
-        print(X, Y, D)
-
-# Average
-for (X, Y) in [(X, Y) for Y in range(Ymin, Ymax+1) for X in range(Xmin, Xmax+1)]:
-    (d_V[(X, Y, dia)], d_J[(X, Y, dia)], d_RA[(X, Y, dia)]) = ave_xyz((d_V[(X, Y, dia)], d_J[(X, Y, dia)], d_RA[(X, Y, dia)]))
+# Configurations ---------------------------------------------------------------
+#conf = defaultdict(str)
+conf = {}
+if os.path.isfile(os.environ['appdata'] + r'\instr\plot_IV_conf.json'):
+    with open(os.environ['appdata'] + r'\instr\plot_IV_conf.json') as f:
+        #conf = defaultdict(str, json.load(f))
+        conf = json.load(f)
+else:
+    with open(r'dummy_data\plot_IV_conf.json') as f:
+        #conf = defaultdict(str, json.load(f))
+        conf = json.load(f)
 
 
-numX = Xmax - Xmin + 1
-numY = Ymax - Ymin + 1
-f, axarr = plt.subplots(numY, numX, figsize=(numX, numY), facecolor='w')
+# Calculations -----------------------------------------------------------------
+area = math.pi * (conf['dia']/2)**2  # um^2
+numX = conf['Xmax'] - conf['Xmin'] + 1
+numY = conf['Ymax'] - conf['Ymin'] + 1
+
+
+# Connect to database ----------------------------------------------------------
+sqlite3_connection = sqlite3.connect(conf['sqlite3_file'])
+cursor = sqlite3_connection.cursor()
+
+
+# Plot -------------------------------------------------------------------------
+f, axarr = plt.subplots(numY, numX, figsize=(numX, numY), facecolor='w')  # Takes long time
 f.subplots_adjust(top=1, bottom=0, left=0, right=1, wspace=0, hspace=0)
-for (rowi, coli) in [(rowi, coli) for rowi in range(numY) for coli in range(numX)]:
-    print(rowi, coli)
-    # (rowi, coli) X, Y
-    # (00)XminYmax ...              (09)XmaxYmax
-    # ...
-    # (08)Xmin(Ymin+1) ...
-    # (09)XminYmin 19(Xmin+1)Ymin ... (99)XmaxYmin
-    X = coli + Xmin
-    Y = Ymax - rowi
-    # axarr[rowi, coli].plot(d_V[(X, Y, dia)], d_J[(X, Y, dia)], 'b')
-    axarr[rowi, coli].plot(d_V[(X, Y, dia)], np.gradient(d_J[(X, Y, dia)], d_V[(X, Y, dia)]), 'b', linewidth=0.1)
-    # axarr[rowi, coli].plot(d_V[(X, Y, dia)], d_RA[(X, Y, dia)], 'r')
-    axarr[rowi, coli].set_xticks([])
-    axarr[rowi, coli].set_yticks([])
-    axarr[rowi, coli].set_xlim([-0.5, 0.5])
-    # axarr[rowi, coli].set_ylim([-1e-11, 1e-11])  # J [A/um^2]
-    # axarr[rowi, coli].set_ylim([0, 2e12])  # RA [ohm um^2]
-    axarr[rowi, coli].set_ylim([-1e-13, 1e-13])  # dJ/dV [A/um^2/V]
-# plt.show()
-plt.savefig(os.path.expanduser('~') + r'\Desktop\tmp.png', dpi=300, transparent=True)
 
-print(0)
+for Y in range(conf['Xmin'], conf['Xmax'] + 1):
+    for X in range(conf['Ymin'], conf['Ymax'] + 1):
+        print('execute')
+        t0s = cursor.execute('''
+            SELECT t0 FROM parameters
+            WHERE sample=? AND mesa=? AND X=? AND Y=?
+            ''', (conf['sample'], conf['mesa'], X, Y)).fetchall()
+        print('t0s:', t0s)
+
+        # Slow because of searching in all data in IV
+        #    cursor.execute('''
+        #    SELECT V, I FROM IV
+        #    INNER JOIN parameters ON IV.t0=parameters.t0
+        #    WHERE sample=? AND mesa=? AND X=? AND Y=?
+        #    ''', (conf['sample'], conf['mesa'], X, Y)).fetchall()
+
+        if t0s == []:
+            continue
+
+        for t0 in t0s:
+            tmp = cursor.execute('SELECT V, I FROM IV WHERE t0=?', t0).fetchall()
+            #(V, I) = zip(*tmp)  # TODO: speed test. faster than numpy?
+            print('np')
+            VIs = np.array(tmp)
+            V = VIs.transpose()[0]
+            J = VIs.transpose()[1]/area
+            RA = V/J
+
+            # rowi coli X Y matrix (if num_X = num_Y = 9)
+            # 00XminYmax     ...                90XmaxYmax
+            # ...
+            # 80Xmin(Ymin+1) ...
+            # 90XminYmin     91(Xmin+1)Ymin ... 99XmaxYmin
+            coli = -conf['Xmin'] + X  # privious: -X TODO check
+            rowi = conf['Ymax'] - Y
+
+            print('plot')
+            axarr[rowi, coli].plot(V, J, 'b', linewidth=0.2)
+            #axarr[rowi, coli].plot(V, RA, 'r', linewidth=0.2)
+            #axarr[rowi, coli].plot(V, np.gradient(J, V), 'b', linewidth=0.1)
+            axarr[rowi, coli].set_xticks([])
+            axarr[rowi, coli].set_yticks([])
+            axarr[rowi, coli].set_xlim([conf['plot_V_min'], conf['plot_V_max']])
+            # axarr[rowi, coli].set_ylim([-1e-11, 1e-11])  # J [A/um^2]
+            # axarr[rowi, coli].set_ylim([0, 2e12])  # RA [ohm um^2]
+            #axarr[rowi, coli].set_ylim([-1e-13, 1e-13])  # dJ/dV [A/um^2/V]
+
+plt.savefig(os.path.expanduser('~') + r'\Desktop\tmp.png', dpi=300, transparent=True)
