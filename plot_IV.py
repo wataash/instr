@@ -14,8 +14,6 @@ import numpy as np
 # Configurations ---------------------------------------------------------------
 #conf = defaultdict(str)
 conf = {}
-os.makedirs(os.environ['appdata'] + r'\instr', exist_ok=True)
-
 if os.path.isfile(os.environ['appdata'] + r'\instr\plot_IV_conf.json'):
     with open(os.environ['appdata'] + r'\instr\plot_IV_conf.json') as f:
         #conf = defaultdict(str, json.load(f))
