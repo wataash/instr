@@ -10,7 +10,7 @@
   "Xmax": 17,
   "Ymin": 1,
   "Ymax": 17,
-  "sqlite3_file": "C:/Users/wsh/Documents/instr/IV.sqlite3",
+  "sqlite3_file": "C:/Users/wsh/Documents/instr_data/IV.sqlite3",
   "plot_V_min": -0.2,
   "plot_V_max": 0.2
 }

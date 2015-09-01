@@ -22,7 +22,7 @@ else:
 
 
 # Calculations -----------------------------------------------------------------
-area = math.pi * (conf['dia']/2)**2  # um^2
+area = math.pi * (conf['dia']/2)**2  # m^2
 numX = conf['Xmax'] - conf['Xmin'] + 1
 numY = conf['Ymax'] - conf['Ymin'] + 1
 
@@ -33,17 +33,25 @@ cursor = sqlite3_connection.cursor()
 
 
 # Plot -------------------------------------------------------------------------
+is_y_fixed_range = False
+var_y = 'RA'
+#var_y = 'J'
+#var_y = 'R'
+d_ylim = {'J': '1E-10', 'RA': '1E10', 'R': '1E6'}
+d_unit = {'J': 'Am2', 'RA': 'ohmm2', 'R': 'ohm'}
+
 f, axarr = plt.subplots(numY, numX, figsize=(numX, numY), facecolor='w')  # Takes long time
-#f.subplots_adjust(top=1, bottom=0, left=0, right=1, wspace=0, hspace=0)
+if is_y_fixed_range:
+    f.subplots_adjust(top=1, bottom=0, left=0, right=1, wspace=0, hspace=0)
 
 for Y in range(conf['Ymin'], conf['Ymax'] + 1):
     for X in range(conf['Xmin'], conf['Xmax'] + 1):
-        print('execute')
+        print('Execute SQLite command (X={}, Y={})'.format(X, Y))
         t0s = cursor.execute('''
             SELECT t0 FROM parameters
             WHERE sample=? AND mesa=? AND X=? AND Y=?
             ''', (conf['sample'], conf['mesa'], X, Y)).fetchall()
-        print('t0s:', t0s)
+
 
         # Slow because of searching in all data in IV
         #    cursor.execute('''
@@ -57,33 +65,54 @@ for Y in range(conf['Ymin'], conf['Ymax'] + 1):
         # ...
         # 80Xmin(Ymin+1) ...
         # 90XminYmin     91(Xmin+1)Ymin ... 99XmaxYmin
+        print('Configure plot t0s=', t0s)
         coli = -conf['Xmin'] + X  # privious: -X TODO check
         rowi = conf['Ymax'] - Y
         axarr[rowi, coli].locator_params(nbins=5)  # number of ticks
+        axarr[rowi, coli].get_yaxis().get_major_formatter().set_powerlimits((0, 0))  # Force exponential ticks
 
         for t0 in t0s:
             tmp = cursor.execute('SELECT V, I FROM IV WHERE t0=?', t0).fetchall()
             #(V, I) = zip(*tmp)  # TODO: speed test. faster than numpy?
-            print('np')
+            print('numpy t0=', t0)
             VIs = np.array(tmp)
             V = VIs.transpose()[0]
             J = VIs.transpose()[1]/area
-            RA = V/J
+            if var_y == 'RA':
+                RA = V/J
+                # TODO remove near 0V
+            elif var_y == 'R':
+                R = V/(J*area)
+                # TODO remove near 0V
 
             print('plot')
-            #axarr[rowi, coli].plot(V, J, 'b', linewidth=0.5)
-            #axarr[rowi, coli].plot(V, RA, 'r', linewidth=0.5)
-            axarr[rowi, coli].plot(V, J, 'r')
-            #axarr[rowi, coli].plot(V, np.gradient(J, V), 'b', linewidth=0.1)
+            if var_y == 'J':
+                axarr[rowi, coli].plot(V, J, 'b', linewidth=0.5)
+            elif var_y == 'RA':
+                axarr[rowi, coli].plot(V, RA, 'r', linewidth=0.5)
+            elif var_y == 'R':
+                axarr[rowi, coli].plot(V, R, 'r', linewidth=0.5)
+            elif var_y == 'dJdV':
+                axarr[rowi, coli].plot(V, np.gradient(J, V), 'b', linewidth=0.1)
+
             axarr[rowi, coli].set_xticks([])
-            #axarr[rowi, coli].set_yticks([])
             axarr[rowi, coli].set_xlim([conf['plot_V_min'], conf['plot_V_max']])
-            #axarr[rowi, coli].set_ylim([-1e-6, 1e-6])  # J [A/um^2]
-            #axarr[rowi, coli].set_ylim([0, 1e12])  # RA [ohm um^2]
-            #axarr[rowi, coli].set_ylim([-1e-13, 1e-13])  # dJ/dV [A/um^2/V]
+            if is_y_fixed_range:
+                axarr[rowi, coli].set_yticks([])
+                axarr[rowi, coli].set_ylim([-float(d_ylim[var_y]), float(d_ylim[var_y])])
 
         if t0s == []:
             axarr[rowi, coli].set_xticks([])
             axarr[rowi, coli].set_yticks([])
 
-plt.savefig(os.path.expanduser('~') + r'\Desktop\J1.png', dpi=300, transparent=True)
+file_name = os.path.expanduser('~')
+if is_y_fixed_range:
+    # E0339_D169_RA_1E11_ohmm2_-0.2V_0.2V.png
+    file_name += '/Desktop/{sample}_{mesa}_{var_y}_{ylim}_{unit}_-0.2V_0.2V.png'. \
+        format(sample=conf['sample'], mesa=conf['mesa'], var_y=var_y, unit=d_unit[var_y], ylim=d_ylim[var_y])
+else:
+    # E0339_D169_RA_auto_ohmm2_-0.2V_0.2V.png
+    file_name += '/Desktop/{sample}_{mesa}_{var_y}_auto_{unit}_-0.2V_0.2V.png'. \
+        format(sample=conf['sample'], mesa=conf['mesa'], var_y=var_y, unit=d_unit[var_y], ylim=d_ylim[var_y])
+
+plt.savefig(file_name, dpi=300, transparent=True)
