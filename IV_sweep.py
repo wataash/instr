@@ -1,4 +1,5 @@
-﻿import math
+﻿import json
+import math
 import os
 import random
 import sqlite3
@@ -11,20 +12,24 @@ from lib.algorithms import rotate_vector
 from lib.algorithms import zigzag_XY
 from lib.agilent4156c import Agilent4156C
 from lib.suss_pa300 import SussPA300
-import configure
 
 
 # Set True while desktop development (without instruments).
 debug_mode = True
-SUSS_debug_mode = True
+
 
 # Configurations ---------------------------------------------------------------
-
-conf = configure.main()
-conf['meas_XYs'] = zigzag_XY(1, 1, 17, 17, True)
+conf = {}
+if os.path.isfile(os.environ['appdata'] + r'\instr\IV_sweep_conf.json'):
+    with open(os.environ['appdata'] + r'\instr\IV_sweep_conf.json') as f:
+        conf = json.load(f)
+else:
+    with open(r'dummy_data\plot_IV_conf.json') as f:
+        conf = json.load(f)
 if debug_mode:
     conf['sample'] = 'debug sample'
-
+    conf['mesa'] = 'debug mesa'
+conf['meas_XYs'] = zigzag_XY(1, 1, 2, 2)
 
 # Initialize -------------------------------------------------------------------
 if debug_mode:
@@ -34,19 +39,16 @@ else:
     rm = visa.ResourceManager()
     print(rm.list_resources())
     agi_rsrc = rm.open_resource(conf['agi_visa_rsrc_name'])
-    if SUSS_debug_mode:
-        suss_rsrc = None
-    else:
-        suss_rsrc = rm.open_resource(conf['suss_visa_rsrc_name'])
+    suss_rsrc = rm.open_resource(conf['suss_visa_rsrc_name'])
 
 agi = Agilent4156C(agi_rsrc, conf['agi_visa_timeout_sec'], False, debug_mode)
-suss = SussPA300(suss_rsrc, conf['suss_visa_timeout_sec'], debug_mode or SUSS_debug_mode)
+suss = SussPA300(suss_rsrc, conf['suss_visa_timeout_sec'], debug_mode)
 
 
 # Connect to database ----------------------------------------------------------
 if not os.path.exists(conf['data_dir']):
     os.makedirs(conf['data_dir'])
-sqlite3_connection = sqlite3.connect(conf['data_dir'] + '/database.sqlite3')
+sqlite3_connection = sqlite3.connect(conf['data_dir'] + '/IV.sqlite3')
 cursor = sqlite3_connection.cursor()
 
 # Create tables if not exist
