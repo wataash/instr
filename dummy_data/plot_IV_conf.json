@@ -1,1 +1,16 @@
-{"You can write lists": [[1, 1], [2, 2]], "sample": "E0339", "mesa": "D169", "dia": 169, "Xmin": 1, "Xmax": 17, "Ymin": 1, "Ymax": 17, "sqlite3_file": "C:/Users/wsh/Documents/instr/IV.sqlite3", "plot_V_min": -0.2, "plot_V_max": 0.2}
+{
+  "You can write list": [
+    [ 1, 1 ],
+    [ 2, 2 ]
+  ],
+  "sample": "E0339",
+  "mesa": "D169",
+  "dia": 169,
+  "Xmin": 1,
+  "Xmax": 17,
+  "Ymin": 1,
+  "Ymax": 17,
+  "sqlite3_file": "C:/Users/wsh/Documents/instr/IV.sqlite3",
+  "plot_V_min": -0.2,
+  "plot_V_max": 0.2
+}
