@@ -7,6 +7,8 @@ import sqlite3
 import matplotlib.pyplot as plt
 import numpy as np
 
+from lib.algorithms import remove_X_near_0
+
 
 # Configurations ---------------------------------------------------------------
 #conf = defaultdict(str)
@@ -76,14 +78,14 @@ for Y in range(conf['Ymin'], conf['Ymax'] + 1):
             #(V, I) = zip(*tmp)  # TODO: speed test. faster than numpy?
             print('numpy t0=', t0)
             VIs = np.array(tmp)
+            if var_y in ['RA', 'R']:
+                VIs = remove_X_near_0(VIs, 10e-3)
             V = VIs.transpose()[0]
             J = VIs.transpose()[1]/area
             if var_y == 'RA':
                 RA = V/J
-                # TODO remove near 0V
             elif var_y == 'R':
                 R = V/(J*area)
-                # TODO remove near 0V
 
             print('plot')
             if var_y == 'J':
