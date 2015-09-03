@@ -10,7 +10,6 @@ from lib.algorithms import remove_X_near_0
 
 
 # Configurations ---------------------------------------------------------------
-conf = {}
 with open('conf.json') as f:
     conf = json.load(f)
 

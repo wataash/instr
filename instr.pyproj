@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56607090-6be0-449e-b724-5c88fb9d41df}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>plot_IV.py</StartupFile>
+    <StartupFile>calculate_R_near_0V.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -34,8 +34,11 @@
     <Compile Include="lib\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="plot_IV.py" />
+    <Compile Include="plot_matrix.py" />
     <Compile Include="plot_Rt.py" />
+    <Compile Include="test_local.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="theta.py" />
     <Compile Include="txt_to_sql.py" />
     <Compile Include="__init__.py" />

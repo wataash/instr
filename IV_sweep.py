@@ -19,7 +19,6 @@ debug_mode = True
 
 
 # Configurations ---------------------------------------------------------------
-conf = {}
 with open('conf.json') as f:
     conf = json.load(f)
 if debug_mode:
