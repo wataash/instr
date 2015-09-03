@@ -25,7 +25,7 @@
     <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="archive.py" />
+    <Compile Include="calculate_R_near_0V - Copy.py" />
     <Compile Include="IV_sweep.py" />
     <Compile Include="lib\agilent4156c.py" />
     <Compile Include="lib\algorithms.py" />
@@ -34,7 +34,6 @@
     <Compile Include="lib\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="plot_examples.py" />
     <Compile Include="plot_IV.py" />
     <Compile Include="plot_Rt.py" />
     <Compile Include="theta.py" />
