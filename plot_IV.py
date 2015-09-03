@@ -35,11 +35,12 @@ cursor = sqlite3_connection.cursor()
 
 
 # Plot -------------------------------------------------------------------------
-is_y_fixed_range = False
+is_y_fixed_range = True
 var_y = 'RA'
 #var_y = 'J'
 #var_y = 'R'
-d_ylim = {'J': '1E-10', 'RA': '1E10', 'R': '1E6'}
+d_ylim_pos = {'J': '1E-5', 'RA': '5E-6', 'R': '1E6'}
+d_ylim_nega = {'J': '-1E-5', 'RA': '0', 'R': '0'}
 d_unit = {'J': 'Am2', 'RA': 'ohmm2', 'R': 'ohm'}
 
 f, axarr = plt.subplots(numY, numX, figsize=(numX, numY), facecolor='w')  # Takes long time
@@ -101,7 +102,7 @@ for Y in range(conf['Ymin'], conf['Ymax'] + 1):
             axarr[rowi, coli].set_xlim([conf['plot_V_min'], conf['plot_V_max']])
             if is_y_fixed_range:
                 axarr[rowi, coli].set_yticks([])
-                axarr[rowi, coli].set_ylim([-float(d_ylim[var_y]), float(d_ylim[var_y])])
+                axarr[rowi, coli].set_ylim([-float(d_ylim_nega[var_y]), float(d_ylim_pos[var_y])])
 
         if t0s == []:
             axarr[rowi, coli].set_xticks([])
@@ -110,11 +111,11 @@ for Y in range(conf['Ymin'], conf['Ymax'] + 1):
 file_name = os.path.expanduser('~')
 if is_y_fixed_range:
     # E0339_D169_RA_1E11_ohmm2_-0.2V_0.2V.png
-    file_name += '/Desktop/{sample}_{mesa}_{var_y}_{ylim}_{unit}_-0.2V_0.2V.png'. \
-        format(sample=conf['sample'], mesa=conf['mesa'], var_y=var_y, unit=d_unit[var_y], ylim=d_ylim[var_y])
+    file_name += '/Desktop/{sample}_{mesa}_{var_y}_{ylim_nega}_{ylim_pos}_{unit}_-0.2V_0.2V.png'. \
+        format(sample=conf['sample'], mesa=conf['mesa'], var_y=var_y, unit=d_unit[var_y], ylim_nega=d_ylim_nega[var_y], ylim_pos=d_ylim_pos[var_y])
 else:
     # E0339_D169_RA_auto_ohmm2_-0.2V_0.2V.png
     file_name += '/Desktop/{sample}_{mesa}_{var_y}_auto_{unit}_-0.2V_0.2V.png'. \
-        format(sample=conf['sample'], mesa=conf['mesa'], var_y=var_y, unit=d_unit[var_y], ylim=d_ylim[var_y])
+        format(sample=conf['sample'], mesa=conf['mesa'], var_y=var_y, unit=d_unit[var_y], ylim=d_ylim_pos[var_y])
 
 plt.savefig(file_name, dpi=300, transparent=True)
