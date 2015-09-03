@@ -25,7 +25,7 @@
     <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="calculate_R_near_0V - Copy.py" />
+    <Compile Include="calculate_R_near_0V.py" />
     <Compile Include="IV_sweep.py" />
     <Compile Include="lib\agilent4156c.py" />
     <Compile Include="lib\algorithms.py" />

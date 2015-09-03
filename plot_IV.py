@@ -1,5 +1,4 @@
-﻿from collections import defaultdict
-import json
+﻿import json
 import math
 import os
 import sqlite3
@@ -35,12 +34,8 @@ cursor = sqlite3_connection.cursor()
 
 
 # Plot -------------------------------------------------------------------------
-fix_y_range = False
-
-
-
 f, axarr = plt.subplots(numY, numX, figsize=(numX, numY), facecolor='w')  # Takes long time
-if fix_y_range:
+if conf['pl_fix_y_range']:
     f.subplots_adjust(top=1, bottom=0, left=0, right=1, wspace=0, hspace=0)
 
 for Y in range(conf['pl_min_Y'], conf['pl_max_Y'] + 1):
@@ -95,7 +90,7 @@ for Y in range(conf['pl_min_Y'], conf['pl_max_Y'] + 1):
 
             axarr[rowi, coli].set_xticks([])
             axarr[rowi, coli].set_xlim([conf['pl_min_V'], conf['pl_max_V']])
-            if fix_y_range:
+            if conf['pl_fix_y_range']:
                 axarr[rowi, coli].set_yticks([])
                 axarr[rowi, coli].set_ylim([-float(ylim_nega), float(ylim_pos)])
 
@@ -104,7 +99,7 @@ for Y in range(conf['pl_min_Y'], conf['pl_max_Y'] + 1):
             axarr[rowi, coli].set_yticks([])
 
 file_name = os.path.expanduser('~')
-if fix_y_range:
+if conf['pl_fix_y_range']:
     # E0339_D169_RA_1E11_ohmm2_-0.2V_0.2V.png
     file_name += '/Desktop/{sample}_{mesa}_{var_y}_{ylim_nega}_{ylim_pos}_{unit}_-0.2V_0.2V.png'. \
         format(sample=conf['pl_sample'], mesa=mesa, var_y=var_y, unit=unit, ylim_nega=ylim_nega, ylim_pos=ylim_pos)
