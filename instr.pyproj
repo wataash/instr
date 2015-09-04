@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56607090-6be0-449e-b724-5c88fb9d41df}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>calculate_R_near_0V.py</StartupFile>
+    <StartupFile>plot_RA_thick.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -35,6 +35,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="plot_matrix.py" />
+    <Compile Include="plot_RA_thick.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="plot_Rt.py" />
     <Compile Include="test_local.py">
       <SubType>Code</SubType>
