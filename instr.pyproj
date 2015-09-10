@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56607090-6be0-449e-b724-5c88fb9d41df}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>pa300_IV_sweep.py</StartupFile>
+    <StartupFile>lib\ap1628t2.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -25,11 +25,22 @@
     <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IVBT1_IB_sweep.py" />
     <Compile Include="lib\agilent4156c.py" />
     <Compile Include="lib\algorithms.py" />
+    <Compile Include="lib\ap1628t2.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="lib\base_instr.py" />
+    <Compile Include="lib\keithley.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lib\sci9700.py" />
     <Compile Include="lib\suss_pa300.py" />
     <Compile Include="lib\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lib\lsci331.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="pa300_calculate_R_near_0V.py" />

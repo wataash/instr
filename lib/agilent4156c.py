@@ -11,15 +11,14 @@ else:
 class Agilent4156C(BaseInstr):
     def __init__(self, instr_rsrc, timeout_sec, use_us_commands, debug_mode=False):
         self._debug_mode = debug_mode
-        super().__init__(instr_rsrc, timeout_sec, self._debug_mode)
+        super().__init__(instr_rsrc, timeout_sec, self._debug_mode, 'HEWLETT-PACKARD,4156C')  # TODO: test
         self._use_us_commands = use_us_commands
         if debug_mode:
-            return
-        if self.q('*IDN?') != 'HEWLETT-PACKARD,4156C,0,03.10:04.08:01.00\n':
-            raise RuntimeError('Failed to connect to Agilent 4156C.')
-        self.w('*RST')  # Restore default configuration
-        self.w('*CLS')  # Clear query buffer
-        self.q_err()
+            pass
+        else:
+            self.w('*RST')  # Restore default configuration
+            self.w('*CLS')  # Clear query buffer
+            self.q_err()
 
     def configure_smu(self, smu_num, mode, func, V_name=None, I_name=None):
         """

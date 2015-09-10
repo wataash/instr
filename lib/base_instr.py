@@ -1,10 +1,18 @@
-﻿class BaseInstr:
-    def __init__(self, instr_rsrc, timeout_sec, debug_mode):
+﻿import re
+
+class BaseInstr:
+    def __init__(self, instr_rsrc, timeout_sec, debug_mode, idn=None):
+        """idn: can be regular expression"""
         self._debug_mode = debug_mode
         if self._debug_mode:
-            return
-        self._instr_rsrc = instr_rsrc
-        self._instr_rsrc.timeout = timeout_sec * 1000  # millisec
+            pass
+        else:
+            self._instr_rsrc = instr_rsrc
+            self._instr_rsrc.timeout = timeout_sec * 1000  # millisec
+            idn_res = self.q('*IDN?')
+            tmp = re.search(idn, idn_res)
+            if tmp is None:
+                raise RuntimeError('Failed to connect to a instrument.')            
 
     def q(self, query_str):
         """
