@@ -1,5 +1,21 @@
-import math
+﻿import math
 from operator import itemgetter
+
+import numpy as np
+
+
+def remove_X_near_0(XYZs, X_threshold):
+    """
+    X_threshold > 0
+
+    In: np.array([[-1, -10], [-0.1, -1], [0, 0], [0.1, 1], [1, 10]]), 0.2
+    ->  np.array([[-1, -10],                               [1, 10]])
+    """
+    res_XYZs = []
+    for XYZ in XYZs:
+        if X_threshold < abs(XYZ[0]):
+            res_XYZs.append(XYZ)
+    return np.array(res_XYZs)
 
 
 def zigzag_XY(start_X, start_Y, max_X, max_Y, go_right_first=True):
@@ -93,6 +109,8 @@ def rotate_vector(x, y, theta_deg):
 
 
 if __name__ == '__main__':
+    tmp = np.array([[-1, -10], [-0.1, -1], [0, 0], [0.1, 1], [1, 10]])
+    tmp = remove_X_near_0(tmp, 0.2)
     print(zigzag_XY(2, 2, 3, 3))
     print(zigzag_XY(2, 1, 2, 2, False))
     # print(zigzag_XY(3, -1, 4, 4))

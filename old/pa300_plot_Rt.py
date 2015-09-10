@@ -1,3 +1,5 @@
+﻿# Old data format!
+
 from collections import defaultdict
 import os
 # import sqlite3

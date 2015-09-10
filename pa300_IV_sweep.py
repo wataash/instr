@@ -19,17 +19,13 @@ debug_mode = False
 
 
 # Configurations ---------------------------------------------------------------
-conf = {}
-if os.path.isfile(os.environ['appdata'] + r'\instr\IV_sweep_conf.json'):
-    with open(os.environ['appdata'] + r'\instr\IV_sweep_conf.json') as f:
-        conf = json.load(f)
-else:
-    with open(r'dummy_data\plot_IV_conf.json') as f:
-        conf = json.load(f)
+with open('conf.json') as f:
+    conf = json.load(f)
 if debug_mode:
-    conf['sample'] = 'debug sample'
-    conf['mesa'] = 'debug mesa'
-conf['meas_XYs'] = zigzag_XY(7, 14, 17, 17, False)
+    conf['dev_sample'] = 'debug sample'
+    conf['dev_mesa'] = 'debug mesa'
+conf['suss_XYs'] = zigzag_XY(1, 1, 2, 2)
+
 
 # Initialize -------------------------------------------------------------------
 if debug_mode:
@@ -38,17 +34,17 @@ if debug_mode:
 else:
     rm = visa.ResourceManager()
     print(rm.list_resources())
-    agi_rsrc = rm.open_resource(conf['agi_visa_rsrc_name'])
-    suss_rsrc = rm.open_resource(conf['suss_visa_rsrc_name'])
+    agi_rsrc = rm.open_resource(conf['visa_rsrc_name_agi'])
+    suss_rsrc = rm.open_resource(conf['visa_rsrc_name_suss'])
 
-agi = Agilent4156C(agi_rsrc, conf['agi_visa_timeout_sec'], False, debug_mode)
-suss = SussPA300(suss_rsrc, conf['suss_visa_timeout_sec'], debug_mode)
+agi = Agilent4156C(agi_rsrc, conf['visa_timeout_sec_agi'], False, debug_mode)
+suss = SussPA300(suss_rsrc, conf['visa_timeout_sec_suss'], debug_mode)
 
 
 # Connect to database ----------------------------------------------------------
-if not os.path.exists(conf['data_dir']):
-    os.makedirs(conf['data_dir'])
-sqlite3_connection = sqlite3.connect(conf['data_dir'] + '/IV.sqlite3')
+if not os.path.exists(os.path.dirname(conf['02_sqlite3_file'])):
+    os.makedirs(os.path.dirname(conf['02_sqlite3_file']))
+sqlite3_connection = sqlite3.connect(conf['02_sqlite3_file'])
 cursor = sqlite3_connection.cursor()
 
 # Create tables if not exist
@@ -99,24 +95,24 @@ try:
     suss.velocity = 1
     if not debug_mode:
         input('Set substrate left bottom edge as home.')
-        suss.move_to_xy_from_home(-conf['subs_width'], -conf['subs_height'])
+        suss.move_to_xy_from_home(-conf['dev_width'], -conf['dev_height'])
         input('Right click substrate right top edge.')
         (x_diagonal_from_home, y_diagonal_from_home, _) = suss.read_xyz('H')
     else:
         (x_diagonal_from_home, y_diagonal_from_home, _) = \
-            (-conf['subs_width'] - random.gauss(0, 50), -conf['subs_height'] - random.gauss(0, 50), 0)
+            (-conf['dev_width'] - random.gauss(0, 50), -conf['dev_height'] - random.gauss(0, 50), 0)
 
     # Calculate theta
     theta_diagonal_tilled = math.atan(y_diagonal_from_home/x_diagonal_from_home) * 180/math.pi
-    theta_pattern_tilled = theta_diagonal_tilled - conf['theta_diagonal']
+    theta_pattern_tilled = theta_diagonal_tilled - conf['dev_theta_diag']
     print('theta_pattern_tilled:', theta_pattern_tilled)
 
     # Measure I-Vs
-    for (X, Y) in conf['meas_XYs']:
+    for (X, Y) in conf['suss_XYs']:
         if not first_measurement:
             suss.align()  # Already separate if first
-        x_next_subs = conf['x00_subs'] + X * conf['distance_between_mesa']
-        y_next_subs = conf['y00_subs'] + Y * conf['distance_between_mesa']
+        x_next_subs = conf['dev_x00'] + X * conf['dev_distance_between_mesa']
+        y_next_subs = conf['dev_y00'] + Y * conf['dev_distance_between_mesa']
         (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
         suss.move_to_xy_from_home(x_next_from_home, y_next_from_home)
         suss.contact()
@@ -124,13 +120,13 @@ try:
             if not debug_mode:
                 input('Contact the prober.')
             first_measurement = False
-        for V in conf['meas_Vs']:
+        for V in conf['agi_Vs']:
             t0 = int(time.strftime('%Y%m%d%H%M%S'))  # 20150830203015
-            Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, None, conf['compliance'])
+            Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, None, conf['agi_comp'])
             points = len(Vs)
             cursor.execute('''INSERT INTO parameters VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
-                             (t0, conf['sample'], X, Y, x_next_subs, y_next_subs,
-                              conf['mesa'], 255, points, conf['compliance'], V,
+                             (t0, conf['dev_sample'], X, Y, x_next_subs, y_next_subs,
+                              conf['dev_mesa'], 255, points, conf['agi_comp'], V,
                               'SUSS PA300 + Agilent 4156C'))
             tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
             cursor.executemany('''INSERT INTO IV(t0, V, I) VALUES(?, ?, ?)''', tmp)  # IV.id: autofilled
