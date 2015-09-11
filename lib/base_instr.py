@@ -4,11 +4,9 @@ class BaseInstr:
     def __init__(self, instr_rsrc, timeout_sec, debug_mode, idn=None):
         """idn: can be regular expression"""
         self._debug_mode = debug_mode
-        if self._debug_mode:
-            pass
-        else:
-            self._instr_rsrc = instr_rsrc
-            self._instr_rsrc.timeout = timeout_sec * 1000  # millisec
+        self._instr_rsrc = instr_rsrc
+        self._instr_rsrc.timeout = timeout_sec * 1000  # millisec
+        if not self._debug_mode:
             idn_res = self.q('*IDN?')
             tmp = re.search(idn, idn_res)
             if tmp is None:

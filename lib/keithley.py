@@ -100,9 +100,9 @@ class Keithley2636A(BaseInstr):
         else:
             raise ValueError("src: 'V' or 'I'")
 
-        if level is not float:
+        if type(level) is not float:
             raise ValueError('level: float')
-        if limit is not float:
+        if type(limit) is not float:
             raise ValueError('limit: float')
 
         self.w('localnode.{0}.source.func = {0}.{1}'.format(smu, out))  #####
@@ -149,8 +149,11 @@ class Keithley2636A(BaseInstr):
         self.w('localnode.smua.source.output = 1')
 
     def read_single_read(self):
-        tmp = self.q('printnumber(localnode.smua.measure.i())')
-        return float(tmp)
+        if self._debug_mode:
+            raise NotImplementedError()
+        else:
+            tmp = self.q('printnumber(localnode.smua.measure.i())')
+            return float(tmp)
 
     def read_single_off(self):
         self.w('localnode.smua.source.output = 0')
