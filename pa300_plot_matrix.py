@@ -54,7 +54,7 @@ else:
     # E0339_D169_RA_auto_ohmm2_-0.2V_0.2V.png
     png_file_name += '/Desktop/{sample}_{mesa}_X{min_X}-{max_X}_Y{min_Y}-{max_Y}_{var_y}_auto_{unit}_{min_V}V_{max_V}V.png'. \
         format(sample=sample, mesa=mesa, min_X=min_X, max_X=max_X, min_Y=min_Y, max_Y=max_Y, var_y=var_y, unit=unit, min_V=min_V, max_V=max_V)
-print('Save on:', png_file_name)
+print('Save to:', png_file_name)
 
 # Connect to database
 sqlite3_connection = sqlite3.connect(sqlite3_file)
