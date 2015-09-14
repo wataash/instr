@@ -11,15 +11,14 @@ else:
 class Agilent4156C(BaseInstr):
     def __init__(self, instr_rsrc, timeout_sec, use_us_commands, debug_mode=False):
         self._debug_mode = debug_mode
-        super().__init__(instr_rsrc, timeout_sec, self._debug_mode)
+        super().__init__(instr_rsrc, timeout_sec, self._debug_mode, 'HEWLETT-PACKARD,4156C')  # TODO: test
         self._use_us_commands = use_us_commands
         if debug_mode:
-            return
-        if self.q('*IDN?') != 'HEWLETT-PACKARD,4156C,0,03.10:04.08:01.00\n':
-            raise RuntimeError('Failed to connect to Agilent 4156C.')
-        self.w('*RST')  # Restore default configuration
-        self.w('*CLS')  # Clear query buffer
-        self.q_err()
+            pass
+        else:
+            self.w('*RST')  # Restore default configuration
+            self.w('*CLS')  # Clear query buffer
+            self.q_err()
 
     def configure_smu(self, smu_num, mode, func, V_name=None, I_name=None):
         """
@@ -155,7 +154,7 @@ class Agilent4156C(BaseInstr):
             self.w(":PAGE:MEAS:SAMP:CONS:SMU{}:COMP {};".format(bias_smu, compI))
         self.set_user_func('R', 'ohm', 'V{0}/I{0}'.format(bias_smu))
         self.set_Y("I{}".format(bias_smu), True, 'R', True)
-        self.configure_display(0, meas_time_second, 1e-15, compI, 1, 1e12)
+        self.configure_display(0, meas_time_second, 1e-15, 1e-3, 1, 1e12)  # Same width of (decade/div, 12div) for Y1 and Y2.
         if self._use_us_commands:
             raise NotImplementedError
         else:
@@ -223,8 +222,8 @@ class Agilent4156C(BaseInstr):
         self.set_Y("I{}".format(swp_smu), True, 'R', True)
         self.configure_display(0 if is_P else end_V,
                                end_V if is_P else 0,
-                               0 if is_P else -comp_I,
-                               comp_I if is_P else 0,
+                               1e-15 if is_P else -1e-3,
+                               1e-3 if is_P else -1e-15,
                                1, 1e12)
         self.w(':PAGE:SCON:MEAS:SING')
         self.q('*OPC?')

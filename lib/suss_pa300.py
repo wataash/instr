@@ -7,18 +7,17 @@ class SussPA300(BaseInstr):
     """
     def __init__(self, instr_rsrc, timeout_sec, debug_mode=False):
         self._debug_mode = debug_mode
-        super().__init__(instr_rsrc, timeout_sec, self._debug_mode)
+        super().__init__(instr_rsrc, timeout_sec, self._debug_mode, 'Suss MicroTec Test Systems GmbH,ProberBench PC,0,0')  # TODO: test
         self._negative_xyz_limit_from_center = (-30000, -30000, 5200)  # 20,000um = 2cm
         self._positive_xyz_limit_from_center = (30000, 30000, 13000)
         self._z_contact = 12000
         self._z_align = self._z_contact - 100
         self._z_separate = self._z_contact - 300
         if self._debug_mode:
-            return
-        if self.q('*IDN?') != 'Suss MicroTec Test Systems GmbH,ProberBench PC,0,0':
-            raise RuntimeError('Failed to connect to SUSS PA300.')
-        # self.w('*RST')
-        self.check_status()
+            pass
+        else:
+            # self.w('*RST')
+            self.check_status()
     
 
     def read_xyz(self, coordinate):

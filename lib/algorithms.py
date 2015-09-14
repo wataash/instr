@@ -1,48 +1,7 @@
-import math
+﻿import math
 from operator import itemgetter
 
-
-def zigzag_XY(start_X, start_Y, max_X, max_Y, go_right_first=True):
-    """
-    zigzag_XY(2, 2, 3, 3) -> [(2,2), (3,2), (3,3), (2,3), (1,3)] (go right up left left)
-
-    zigzag_XY(2, 1, 2, 2, False) -> [(2,1), (1,1), (1,2), (2,2)] (go left up right)
-
-    :type start_X: int
-    :type start_Y: int
-    :type max_X: int
-    :type max_Y: int
-    :type go_right_first: bool
-    :rtype: list(tuple(int))
-    """
-    res = []
-    X = start_X
-    Y = start_Y
-
-    if start_X < 0 or max_X < start_X or start_Y < 0 or max_Y < start_Y:
-        raise ValueError('XY out of range.')
-
-    if go_right_first:
-        while X <= max_X:
-            res.append((X, Y))
-            X += 1
-        go_right = False
-    else:
-        while 1 <= X:
-            res.append((X, Y))
-            X -= 1
-        go_right = True
-    Y+= 1
-
-    while Y <= max_Y:
-        if go_right:
-            res += [(XX, Y) for XX in range(1, max_X + 1)]
-            go_right = False
-        else:
-            res += [(XX, Y) for XX in reversed(range(1, max_X + 1))]
-            go_right = True
-        Y+= 1
-    return res
+import numpy as np
 
 
 def ave_xyz(lists):
@@ -86,13 +45,90 @@ def ave_xyz(lists):
     res_lists_transposed.append([prev_x] + [y/num_x for y in sum_yz])  # last x
     return list(zip(*res_lists_transposed))
 
+def remove_X_near_0(XYZs, X_threshold):
+    """
+    X_threshold > 0
+
+    In: np.array([[-1, -10], [-0.1, -1], [0, 0], [0.1, 1], [1, 10]]), 0.2
+    ->  np.array([[-1, -10],                               [1, 10]])
+    """
+    res_XYZs = []
+    for XYZ in XYZs:
+        if X_threshold < abs(XYZ[0]):
+            res_XYZs.append(XYZ)
+    return np.array(res_XYZs)
 
 def rotate_vector(x, y, theta_deg):
     theta_rad = theta_deg * math.pi/180
     return math.cos(theta_rad)*x - math.sin(theta_rad)*y, math.sin(theta_rad)*x + math.cos(theta_rad)*y
 
+def zigzag_XY(start_X, start_Y, max_X, max_Y, go_right_first=True):
+    """
+    zigzag_XY(2, 2, 3, 3) -> [(2,2), (3,2), (3,3), (2,3), (1,3)] (go right up left left)
+
+    zigzag_XY(2, 1, 2, 2, False) -> [(2,1), (1,1), (1,2), (2,2)] (go left up right)
+
+    :type start_X: int
+    :type start_Y: int
+    :type max_X: int
+    :type max_Y: int
+    :type go_right_first: bool
+    :rtype: list(tuple(int))
+    """
+    res = []
+    X = start_X
+    Y = start_Y
+
+    if start_X < 0 or max_X < start_X or start_Y < 0 or max_Y < start_Y:
+        raise ValueError('XY out of range.')
+
+    if go_right_first:
+        while X <= max_X:
+            res.append((X, Y))
+            X += 1
+        go_right = False
+    else:
+        while 1 <= X:
+            res.append((X, Y))
+            X -= 1
+        go_right = True
+    Y+= 1
+
+    while Y <= max_Y:
+        if go_right:
+            res += [(XX, Y) for XX in range(1, max_X + 1)]
+            go_right = False
+        else:
+            res += [(XX, Y) for XX in reversed(range(1, max_X + 1))]
+            go_right = True
+        Y+= 1
+    return res
+
+def log_list(start, end, steps):
+    """
+    log_list(1, 10, 10)
+    -> [1.0, 1.26, 1.58, 1.99, 2.41, 3.16, 3.98, 5.01, 6.31, 7.94, 10.0]
+    (as you look everyday on a log-scale graph.)
+    (also same as 0dB, 1dB, 2dB, 3dB, ..., 10dB)
+    """
+    if start == 0 or end == 0:
+        raise ValueError('start and end cannot be 0.')
+    if start < 0 < end or start > 0 > end:
+        raise ValueError('start and end must have same sign.')
+    if type(steps) is not int:
+        raise ValueError('steps should be int.')
+    return [start * (end/start)**(n/steps) for n in range(steps + 1)]
+
 
 if __name__ == '__main__':
+    tmp = log_list(1, 10000, 30)
+    tmp = log_list(-1, -10, 10)
+    tmp = log_list(10, 1, 10)
+    #tmp = log_list(0, 10, 10)
+    #tmp = log_list(-12.3, 34.1, 21)
+
+    tmp = np.array([[-1, -10], [-0.1, -1], [0, 0], [0.1, 1], [1, 10]])
+    tmp = remove_X_near_0(tmp, 0.2)
     print(zigzag_XY(2, 2, 3, 3))
     print(zigzag_XY(2, 1, 2, 2, False))
     # print(zigzag_XY(3, -1, 4, 4))
