@@ -11,6 +11,7 @@ from lib.algorithms import remove_X_near_0
 # Configurations ---------------------------------------------------------------
 sqlite3_file = os.path.expanduser('~') + '/Documents/instr_data/IV.sqlite3'
 
+# Device data
 sample = "E0326-2-1"
 mesa = ['D169', 'D56.3', 'D16.7', 'D5.54'][1]
 dict_dia = {'D169': 169e-6, 'D56.3': 56.3e-6, 'D16.7': 16.7e-6, 'D5.54': 5.54e-6} # diameter [m]
@@ -22,6 +23,7 @@ max_X = 11
 min_Y = 1
 max_Y = 3
 
+# Plot config
 fix_y_range = False
 max_V = 0.5
 min_V = -0.5
