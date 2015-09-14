@@ -154,7 +154,7 @@ class Agilent4156C(BaseInstr):
             self.w(":PAGE:MEAS:SAMP:CONS:SMU{}:COMP {};".format(bias_smu, compI))
         self.set_user_func('R', 'ohm', 'V{0}/I{0}'.format(bias_smu))
         self.set_Y("I{}".format(bias_smu), True, 'R', True)
-        self.configure_display(0, meas_time_second, 1e-15, compI, 1, 1e12)
+        self.configure_display(0, meas_time_second, 1e-15, 1e-3, 1, 1e12)  # Same width of (decade/div, 12div) for Y1 and Y2.
         if self._use_us_commands:
             raise NotImplementedError
         else:
@@ -222,8 +222,8 @@ class Agilent4156C(BaseInstr):
         self.set_Y("I{}".format(swp_smu), True, 'R', True)
         self.configure_display(0 if is_P else end_V,
                                end_V if is_P else 0,
-                               0 if is_P else -comp_I,
-                               comp_I if is_P else 0,
+                               1e-15 if is_P else -1e-3,
+                               1e-3 if is_P else -1e-15,
                                1, 1e12)
         self.w(':PAGE:SCON:MEAS:SING')
         self.q('*OPC?')

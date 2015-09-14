@@ -1,8 +1,10 @@
 ﻿# Built-in libs
+import json
 import math
 import os
 import random
 import sqlite3
+import sys
 import time
 import traceback
 # Installed libs
@@ -15,59 +17,72 @@ from lib.suss_pa300 import SussPA300
 
 
 # Set True while development without instruments.
-debug_mode = True
+debug_mode = False
 
 
 # Configurations ---------------------------------------------------------------
-sqlite3_file = os.path.expanduser('~') + '/Documents/instr_data/IV.sqlite3'
+if sys.argv[0].endswith('.exe'):
+    tmp = input('Learn usage from Ashihara before.')
+    if tmp != 'do':
+        raise RuntimeError()
+    with open('pa300_IV_sweep.json') as f:
+        j = json.load(f)
+    j['sqlite3_file'] = 'IV.sqlite3'
+    debug_mode = False
+else:
+    j = {}
+    j['sqlite3_file'] = os.path.expanduser('~') + '/Documents/instr_data/IV.sqlite3'
 
-# Device data
-sample = "E0326-2-1"
-mesa = ['D169', 'D56.3', 'D16.7', 'D5.54'][1]
-# s_: substrate
-s_distance_between_mesa = 1300
-s_height = 25000.0
-s_width = 24700.0
-s_max_X = 17
-s_max_Y = 17
-# Caluculated values by theta.py
-s_theta_diag = 46.7
-s_x00 = 905.0
-s_y00 = 1200.0
+    # Device data
+    j['sample'] = 'E0339 X9-12 Y13-16'
+    j['mesa'] = ['D169', 'D56.3', 'D16.7', 'D5.54'][1]
+    # s_: substrate
+    j['s_distance_between_mesa'] = 1300
+    j['s_height'] = 5200.0
+    j['s_width'] = 5200.0
+    j['s_max_X'] = 4
+    j['s_max_Y'] = 4
+    # Caluculated values by theta.py
+    j['s_theta_diag'] = 45
+    j['s_x00'] = -1126 + 300
+    j['s_y00'] = -250.0
 
-# VISA config
-visa_rsrc_name_agi = "GPIB0::18::INSTR"
-visa_rsrc_name_suss = "GPIB0::7::INSTR"
-visa_timeout_sec_agi = 600
-visa_timeout_sec_suss = 10
+    # VISA config
+    j['visa_rsrc_name_agi'] = 'GPIB0::18::INSTR'
+    j['visa_rsrc_name_suss'] = 'GPIB0::7::INSTR'
+    j['visa_timeout_sec_agi'] = 600
+    j['visa_timeout_sec_suss'] = 10
 
-# Measurement config
-agi_comp = 10e-3
-agi_Vs = [ 0.1, -0.1 ]
-XYs = zigzag_XY(1, 1, 2, 2)
+    # Measurement config
+    j['agi_comp'] = 10e-3
+    j['agi_Vs'] = [0.2, -0.2]
+    j['XYs'] = zigzag_XY(1, 1, 4, 4, True)
 
-if debug_mode:
-    sample = 'debug sample'
-    mesa = 'debug mesa'
+    with open('pa300_IV_sweep.json', 'w') as f:
+        json.dump(j, f)
+
+    if debug_mode:
+        j['sample'] = 'debug sample'
+        j['mesa'] = 'debug mesa'
 
 
 # Connect to database ----------------------------------------------------------
-sqlite3_connection = sqlite3.connect(sqlite3_file)
+sqlite3_connection = sqlite3.connect(j['sqlite3_file'])
 cursor = sqlite3_connection.cursor()
 
 
 # Initialize -------------------------------------------------------------------
 if debug_mode:
-    agi_rsrc = None
+    j['agi_rsrc'] = None
     suss_rsrc = None
 else:
     rm = visa.ResourceManager()
     print(rm.list_resources())
-    agi_rsrc = rm.open_resource(visa_rsrc_name_agi)
-    suss_rsrc = rm.open_resource(visa_rsrc_name_suss)
+    j['agi_rsrc'] = rm.open_resource(j['visa_rsrc_name_agi'])
+    suss_rsrc = rm.open_resource(j['visa_rsrc_name_suss'])
 
-agi = Agilent4156C(agi_rsrc, visa_timeout_sec_agi, False, debug_mode)
-suss = SussPA300(suss_rsrc, visa_timeout_sec_suss, debug_mode)
+agi = Agilent4156C(j['agi_rsrc'], j['visa_timeout_sec_agi'], False, debug_mode)
+suss = SussPA300(suss_rsrc, j['visa_timeout_sec_suss'], debug_mode)
 
 
 # Measure ----------------------------------------------------------------------
@@ -79,25 +94,25 @@ try:
     suss.velocity = 1
     if not debug_mode:
         input('Set substrate left bottom edge as home.')
-        suss.move_to_xy_from_home(-s_width, -s_height)
+        suss.move_to_xy_from_home(-j['s_width'], -j['s_height'])
         input('Right click substrate right top edge.')
         (x_diagonal_from_home, y_diagonal_from_home, _) = suss.read_xyz('H')
     else:
         (x_diagonal_from_home, y_diagonal_from_home, _) = \
-            (-s_width - random.gauss(0, 50), -s_height - random.gauss(0, 50), 0)
+            (-j['s_width'] - random.gauss(0, 50), -j['s_height'] - random.gauss(0, 50), 0)
 
     # Calculate theta
     theta_diagonal_tilled = math.atan(y_diagonal_from_home/x_diagonal_from_home) * 180/math.pi
-    theta_pattern_tilled = theta_diagonal_tilled - s_theta_diag
+    theta_pattern_tilled = theta_diagonal_tilled - j['s_theta_diag']
     print('theta_pattern_tilled:', theta_pattern_tilled)
 
     # Measure I-Vs
-    for (X, Y) in XYs:
+    for (X, Y) in j['XYs']:
         print('X{}Y{}'.format(X, Y))
         if not first_measurement:
             suss.align()  # Already separate if first
-        x_next_subs = s_x00 + X * s_distance_between_mesa
-        y_next_subs = s_y00 + Y * s_distance_between_mesa
+        x_next_subs = j['s_x00'] + X * j['s_distance_between_mesa']
+        y_next_subs = j['s_y00'] + Y * j['s_distance_between_mesa']
         (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
         suss.move_to_xy_from_home(x_next_from_home, y_next_from_home)
         suss.contact()
@@ -105,13 +120,13 @@ try:
             if not debug_mode:
                 input('Contact the prober.')
             first_measurement = False
-        for V in agi_Vs:
+        for V in j['agi_Vs']:
             t0 = int(time.strftime('%Y%m%d%H%M%S'))  # 20150830203015
-            Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, None, agi_comp)
+            Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, None, j['agi_comp'])
             points = len(Vs)
             cursor.execute('''INSERT INTO parameters VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
-                             (t0, sample, X, Y, x_next_subs, y_next_subs,
-                              mesa, 255, points, agi_comp, V,
+                             (t0, j['sample'], X, Y, None, None,
+                              j['mesa'], 255, points, j['agi_comp'], V,
                               'SUSS PA300 + Agilent 4156C'))
             tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
             cursor.executemany('''INSERT INTO IV(t0, V, I) VALUES(?, ?, ?)''', tmp)  # IV.id: autofilled
@@ -141,4 +156,4 @@ finally:
     # Close the database
     cursor.close()
 
-print(0)
+input('Done.')
