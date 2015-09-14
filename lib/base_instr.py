@@ -5,8 +5,8 @@ class BaseInstr:
         """idn: can be regular expression"""
         self._debug_mode = debug_mode
         self._instr_rsrc = instr_rsrc
-        self._instr_rsrc.timeout = timeout_sec * 1000  # millisec
         if not self._debug_mode:
+            self._instr_rsrc.timeout = timeout_sec * 1000  # millisec
             idn_res = self.q('*IDN?')
             tmp = re.search(idn, idn_res)
             if tmp is None:

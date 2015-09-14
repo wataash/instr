@@ -5,14 +5,15 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56607090-6be0-449e-b724-5c88fb9d41df}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>IVBT1_IT.py</StartupFile>
+    <StartupFile>pa300_IV_sweep.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId />
-    <InterpreterVersion />
+    <InterpreterId>{32eaec61-5b9c-42f4-a381-feebdfd70c5c}</InterpreterId>
+    <InterpreterVersion>3.4</InterpreterVersion>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
@@ -49,6 +50,9 @@
     <Compile Include="pa300_IV_sweep.py" />
     <Compile Include="pa300_plot_matrix.py" />
     <Compile Include="pa300_theta.py" />
+    <Compile Include="setup.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="test_local.py">
       <SubType>Code</SubType>
     </Compile>
@@ -56,6 +60,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="{32eaec61-5b9c-42f4-a381-feebdfd70c5c}\3.4" />
   </ItemGroup>
   <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />

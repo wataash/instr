@@ -1,0 +1,7 @@
+{
+  "s_distance_between_mesa": 1300,
+  "s_max_X": 4,
+  "s_max_Y": 4,
+  "visa_rsrc_name_suss": "GPIB0::7::INSTR",
+  "visa_timeout_sec_suss": 10
+}
