@@ -12,16 +12,14 @@ from lib.algorithms import remove_X_near_0
 sqlite3_file = os.path.expanduser('~') + '/Documents/instr_data/IV.sqlite3'
 
 # Device data
-sample = "E0326-2-1"
-mesa = ['D169', 'D56.3', 'D16.7', 'D5.54'][1]
-dict_dia = {'D169': 169e-6, 'D56.3': 56.3e-6, 'D16.7': 16.7e-6, 'D5.54': 5.54e-6} # diameter [m]
+sample = 'E0339 X9-12 Y13-16'
+mesa = ['D169', 'D56.3', 'D16.7', 'D5.54'][0]
+dia = {'D169': 169e-6, 'D56.3': 56.3e-6, 'D16.7': 16.7e-6, 'D5.54': 5.54e-6}[mesa] # diameter [m]
+area = math.pi * (dia/2)**2  # [m^2]
 
 # Bug: Error when (min_X == max_X) or (min_Y = =max_Y)
 # They must be (min_X < max_X) and (min_Y < max_Y).
-min_X = 1
-max_X = 11
-min_Y = 1
-max_Y = 3
+min_X, max_X, min_Y, max_Y = (1, 11, 1, 3)
 
 # Plot config
 fix_y_range = False
@@ -34,8 +32,7 @@ dict_ylim_pos = {'J': '1E-5', 'RA': '1E-1', 'R': '1E6'}
 
 
 # Calculations -----------------------------------------------------------------
-dia = dict_dia[mesa]
-area = math.pi * (dia/2)**2  # [m^2]
+
 
 # Number of columns and rows in matrix plot
 numX = max_X - min_X + 1

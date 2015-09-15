@@ -2,7 +2,7 @@
 
 class BaseInstr:
     def __init__(self, instr_rsrc, timeout_sec, debug_mode, idn=None):
-        """idn: can be regular expression"""
+        """idn: can be a regular expression"""
         self._debug_mode = debug_mode
         self._instr_rsrc = instr_rsrc
         if not self._debug_mode:

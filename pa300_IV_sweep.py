@@ -34,8 +34,8 @@ else:
     j['sqlite3_file'] = os.path.expanduser('~') + '/Documents/instr_data/IV.sqlite3'
 
     # Device data
-    j['sample'] = 'E0339 X9-12 Y13-16'
-    j['mesa'] = ['D169', 'D56.3', 'D16.7', 'D5.54'][1]
+    j['sample'] = 'E0339 X13-16 Y9-12'
+    j['mesa'] = ['D169', 'D56.3', 'D16.7', 'D5.54'][0]
     # s_: substrate
     j['s_distance_between_mesa'] = 1300
     j['s_height'] = 5200.0
@@ -44,7 +44,7 @@ else:
     j['s_max_Y'] = 4
     # Caluculated values by theta.py
     j['s_theta_diag'] = 45
-    j['s_x00'] = -1126 + 300
+    j['s_x00'] = -1126# + 300
     j['s_y00'] = -250.0
 
     # VISA config
@@ -124,6 +124,7 @@ try:
             t0 = int(time.strftime('%Y%m%d%H%M%S'))  # 20150830203015
             Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, None, j['agi_comp'])
             points = len(Vs)
+            # XY offset: UPDATE parameters SET X=X+8, Y=Y+12 WHERE sample="E0339 X9-12 Y13-16" and mesa="D56.3"
             cursor.execute('''INSERT INTO parameters VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
                              (t0, j['sample'], X, Y, None, None,
                               j['mesa'], 255, points, j['agi_comp'], V,
@@ -135,6 +136,7 @@ try:
                 time.sleep(1)  # To avoid duplicates of "t0" in database
             if aborted:
                 break
+        # TODO: calculate R
 
 except:
     if not debug_mode:
