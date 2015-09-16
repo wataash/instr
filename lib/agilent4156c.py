@@ -1,5 +1,6 @@
-﻿import math
-
+﻿# Std libs
+import math
+# Non-std libs
 import visa
 
 if __name__ == "__main__" and __package__ is None:

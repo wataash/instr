@@ -15,14 +15,14 @@ CREATE TABLE `resistance` (
 );
 """
 
-# Built-in libs
+# Std libs
 import math
 import os
 import sqlite3
-# Installed libs
+# Non-std libs
 import numpy as np
 import statsmodels.api as sm
-# My libs
+
 
 
 sample = 'E0339 X9-12 Y13-16'

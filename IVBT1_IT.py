@@ -1,12 +1,14 @@
-﻿import os
+﻿# Std libs
+import os
 import sqlite3
 import time
-
+# Non-std libs
 import visa
-
+# My libs
 from lib.keithley import Keithley2636A
 from lib.sci9700 import Sci9700
 from lib.algorithms import log_list
+
 
 ## Configurations ---------------------------------------------------------------
 debug_mode = False  # Set True while development without instruments.

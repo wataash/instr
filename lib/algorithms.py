@@ -1,6 +1,7 @@
-﻿import math
+﻿# Std libs
+import math
 from operator import itemgetter
-
+# Non-std libs
 import numpy as np
 
 
@@ -51,12 +52,19 @@ def remove_X_near_0(XYZs, X_threshold):
 
     In: np.array([[-1, -10], [-0.1, -1], [0, 0], [0.1, 1], [1, 10]]), 0.2
     ->  np.array([[-1, -10],                               [1, 10]])
+    remove_X_near_0([[1,2,3], [0,3,4]], 0.5)
+    ->              [[1,2,3]]
     """
+    if X_threshold <= 0:
+        raise ValueError('X_threshold must be grater than zero.')
     res_XYZs = []
     for XYZ in XYZs:
         if X_threshold < abs(XYZ[0]):
             res_XYZs.append(XYZ)
-    return np.array(res_XYZs)
+    if isinstance(XYZ, np.ndarray):
+        return np.array(res_XYZs)
+    else:
+        return res_XYZs
 
 def rotate_vector(x, y, theta_deg):
     theta_rad = theta_deg * math.pi/180
