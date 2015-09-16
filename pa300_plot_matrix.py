@@ -20,22 +20,20 @@ if debug_mode:
 sqlite3_file = os.path.expanduser('~') + '/Documents/instr_data/IV.sqlite3'
 
 # Device data
-sample = 'E0339 X9-12 Y13-16'
-mesa = ['D169', 'D56.3', 'D16.7', 'D5.54'][0]
+sample = 'E0326-2-1'
+mesa = ['D169', 'D56.3', 'D16.7', 'D5.54'][1]
 dia = {'D169': 169e-6, 'D56.3': 56.3e-6, 'D16.7': 16.7e-6, 'D5.54': 5.54e-6}[mesa] # diameter [m]
 area = math.pi * (dia/2)**2  # [m^2]
 
 # Bug: Error when (min_X == max_X) or (min_Y == max_Y)
 # They must be (min_X < max_X) and (min_Y < max_Y).
-min_X, max_X, min_Y, max_Y = (1, 11, 1, 3)
+min_X, max_X, min_Y, max_Y = (1, 11, 1, 4)
 
 # Plot config
 fix_y_range = False
-max_V = 0.2
-min_V = -0.2
-max_V = 0.5
-min_V = -0.5
-var_y = ['J', 'RA', 'R'][0]
+max_V = 0.1
+min_V = -0.1
+var_y = ['J', 'RA', 'R'][2]
 dict_unit = {'J': 'Am2', 'RA': 'ohmm2', 'R': 'ohm'}
 dict_ylim_nega = {'J': '-1E-5', 'RA': '0', 'R': '0'}
 dict_ylim_pos = {'J': '1E-5', 'RA': '1E-1', 'R': '1E6'}
@@ -70,7 +68,7 @@ if not debug_mode:
 
 
 # Plot -------------------------------------------------------------------------
-print('Making subplot frame...')
+print('Making subplots frame...')
 f, axarr = plt.subplots(numY, numX, figsize=(numX, numY), facecolor='w')  # Takes long time
 if fix_y_range:
     f.subplots_adjust(top=1, bottom=0, left=0, right=1, wspace=0, hspace=0)
@@ -114,7 +112,7 @@ for Y in range(min_Y, max_Y + 1):
         axarr[rowi, coli].get_yaxis().get_major_formatter().set_powerlimits((0, 0))  # Force exponential ticks
 
         # Get data XY
-        Vs = np.array([])
+        xs = np.array([])  # x axis values
         ys = np.array([])  # y axis values
         for t0 in t0s:
             print('Querying data.')
@@ -126,16 +124,17 @@ for Y in range(min_Y, max_Y + 1):
             VIs_new = np.array(VIs_new)
             if var_y in ['RA', 'R']:
                 VIs_new = remove_X_near_0(VIs_new, 10e-3)
-            Vs = VIs_new.transpose()[0]
-            Js = VIs_new.transpose()[1]/area
+            Vs_new = VIs_new.transpose()[0]
+            xs = np.append(xs, Vs_new)
+            Js_new = VIs_new.transpose()[1]/area
             if var_y == 'J':
-                ys = np.append(ys, Js)
+                ys = np.append(ys, Js_new)
             elif var_y == 'RA':
-                RAs = Vs/Js
-                ys = np.append(ys, RAs)
+                RAs_new = Vs_new/Js_new
+                ys = np.append(ys, RAs_new)
             elif var_y == 'R':
-                Rs = Vs/(Js*area)
-                ys = np.append(ys, Rs)
+                Rs_new = Vs_new/(Js_new*area)
+                ys = np.append(ys, Rs_new)
 
         ## Plot data XY
         #print('Plotting t0 =', t0)
@@ -151,14 +150,7 @@ for Y in range(min_Y, max_Y + 1):
         # Scatter XY
         print('Plotting t0 =', t0)
 
-        if var_y == 'J':
-            axarr[rowi, coli].scatter(Vs, Js, s=1, c=list(range(len(Vs))), cmap=cm.rainbow, edgecolor='none')  # s: size
-        elif var_y == 'RA':
-            axarr[rowi, coli].scatter(Vs, RAs, s=1, edgecolor='none')
-        elif var_y == 'R':
-            axarr[rowi, coli].scatter(Vs, Rs, s=1, edgecolor='none')
-        elif var_y == 'dJdV':
-            axarr[rowi, coli].scatter(Vs, np.gradient(Js, Vs), s=1, edgecolor='none')
+        axarr[rowi, coli].scatter(xs, ys, s=0.1, c=list(range(len(xs))), cmap=cm.rainbow, edgecolor='none')  # s: size
 
         axarr[rowi, coli].set_xticks([])
         axarr[rowi, coli].set_xlim([min_V, max_V])
@@ -170,3 +162,4 @@ for Y in range(min_Y, max_Y + 1):
 
 
 plt.savefig(png_file_name, dpi=300, transparent=True)
+plt.savefig(png_file_name.replace('.png', '.pdf'), transparent=True)  # dpi is ignored, transparent as well?
