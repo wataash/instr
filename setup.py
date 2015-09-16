@@ -2,8 +2,10 @@
 Builds a stand-alone .exe file.
 """
 
+# Std libs
 import sys
 from distutils.core import setup
+# Non-std libs
 import py2exe
 
 sys.argv.append('py2exe')

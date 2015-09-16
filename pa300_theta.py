@@ -3,10 +3,10 @@ Coordinates: from home
 Up probers!!
 """
 
-# Built-in libs
+# Std libs
 import json
 import math
-# Installed libs
+# Non-std libs
 import visa
 # My libs
 from lib.algorithms import rotate_vector

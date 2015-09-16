@@ -1,4 +1,5 @@
-﻿import os
+﻿# Std libs
+import os
 import sqlite3
 
 data_dir = os.path.expanduser('~') + '/Documents/Agilent4156C'

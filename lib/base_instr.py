@@ -1,4 +1,5 @@
-﻿import re
+﻿# Std libs
+import re
 
 class BaseInstr:
     def __init__(self, instr_rsrc, timeout_sec, debug_mode, idn=None):

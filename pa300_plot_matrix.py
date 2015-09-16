@@ -1,12 +1,20 @@
-﻿import math
+﻿# Std libs
+from collections import defaultdict
+import math
 import os
 import sqlite3
-
+# Non-std libs
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import numpy as np
-
+# My libs
 from lib.algorithms import remove_X_near_0
 
+
+# Fast debag mode (SQL query is slow if database is large)
+debug_mode = False
+if debug_mode:
+    print('*'*20, 'Debug mode', '*'*20)
 
 # Configurations ---------------------------------------------------------------
 sqlite3_file = os.path.expanduser('~') + '/Documents/instr_data/IV.sqlite3'
@@ -16,17 +24,17 @@ sample = "E0326-2-1"
 mesa = ['D169', 'D56.3', 'D16.7', 'D5.54'][1]
 dict_dia = {'D169': 169e-6, 'D56.3': 56.3e-6, 'D16.7': 16.7e-6, 'D5.54': 5.54e-6} # diameter [m]
 
-# Bug: Error when (min_X == max_X) or (min_Y = =max_Y)
+# Bug: Error when (min_X == max_X) or (min_Y == max_Y)
 # They must be (min_X < max_X) and (min_Y < max_Y).
 min_X = 1
-max_X = 11
-min_Y = 1
-max_Y = 3
+max_X = 3
+min_Y = 3
+max_Y = 4
 
 # Plot config
 fix_y_range = False
-max_V = 0.5
-min_V = -0.5
+max_V = 0.2
+min_V = -0.2
 var_y = ['J', 'RA', 'R'][0]
 dict_unit = {'J': 'Am2', 'RA': 'ohmm2', 'R': 'ohm'}
 dict_ylim_nega = {'J': '-1E-5', 'RA': '0', 'R': '0'}
@@ -57,11 +65,13 @@ else:
 print('Save on:', png_file_name)
 
 # Connect to database
-sqlite3_connection = sqlite3.connect(sqlite3_file)
-cursor = sqlite3_connection.cursor()
+if not debug_mode:
+    sqlite3_connection = sqlite3.connect(sqlite3_file)
+    cursor = sqlite3_connection.cursor()
 
 
 # Plot -------------------------------------------------------------------------
+print('Making subplot frame...')
 f, axarr = plt.subplots(numY, numX, figsize=(numX, numY), facecolor='w')  # Takes long time
 if fix_y_range:
     f.subplots_adjust(top=1, bottom=0, left=0, right=1, wspace=0, hspace=0)
@@ -69,11 +79,14 @@ if fix_y_range:
 for Y in range(min_Y, max_Y + 1):
     for X in range(min_X, max_X + 1):
         print('Processing X{}Y{}.'.format(X, Y))
-        print('Executing SQLite command.')
-        t0s = cursor.execute('''
-            SELECT t0 FROM parameters
-            WHERE sample=? AND mesa=? AND X=? AND Y=?
-            ''', (sample, mesa, X, Y)).fetchall()
+        if debug_mode:
+            t0s = [1234]
+        else:
+            print('Executing SQLite command.')
+            t0s = cursor.execute('''
+                SELECT t0 FROM parameters
+                WHERE sample=? AND mesa=? AND X=? AND Y=?
+                ''', (sample, mesa, X, Y)).fetchall()
 
         # Slow because of searching in all data in IV
         #    cursor.execute('''
@@ -87,46 +100,74 @@ for Y in range(min_Y, max_Y + 1):
         # ...
         # 80Xmin(Ymin+1) ...
         # 90XminYmin     91(Xmin+1)Ymin ... 99XmaxYmin
-        print('Configuring plot for t0s =', t0s)
-        coli = -min_X + X  # privious: -X TODO check
+        coli = -min_X + X
         rowi = max_Y - Y
+
+        if t0s == []:
+            print('No data on X{}Y{} (rowi{}coli{})'.format(X, Y, rowi, coli))
+            # No tick
+            axarr[rowi, coli].set_xticks([])
+            axarr[rowi, coli].set_yticks([])
+            continue
+
+        print('Configuring plot for t0s =', t0s)
         axarr[rowi, coli].locator_params(nbins=5)  # number of ticks
         axarr[rowi, coli].get_yaxis().get_major_formatter().set_powerlimits((0, 0))  # Force exponential ticks
 
+        # Get data XY
+        Vs = np.array([])
+        ys = np.array([])  # y axis values
         for t0 in t0s:
-            tmp = cursor.execute('SELECT V, I FROM IV WHERE t0=?', t0).fetchall()
-            #(V, I) = zip(*tmp)  # TODO: speed test. faster than numpy?
-            VIs = np.array(tmp)
+            print('Querying data.')
+            if debug_mode:
+                VIs_new = [[V, (1e-5 + 1e-6*X)*(V + 0.1*V**2) + 1e-7*Y*math.sin(Y*V/max_V)] for V in np.linspace(min_V, max_V, 101)]
+            else:
+                VIs_new = cursor.execute('SELECT V, I FROM IV WHERE t0=?', t0).fetchall() # Slow (~1sec)
+            print('Got data.')
+            VIs_new = np.array(VIs_new)
             if var_y in ['RA', 'R']:
-                VIs = remove_X_near_0(VIs, 10e-3)
-            V = VIs.transpose()[0]
-            J = VIs.transpose()[1]/area
-            if var_y == 'RA':
-                RA = V/J
-            elif var_y == 'R':
-                R = V/(J*area)
-
-            print('Plotting t0 =', t0)
+                VIs_new = remove_X_near_0(VIs_new, 10e-3)
+            Vs = VIs_new.transpose()[0]
+            Js = VIs_new.transpose()[1]/area
             if var_y == 'J':
-                axarr[rowi, coli].plot(V, J, 'b', linewidth=0.5)
+                ys = np.append(ys, Js)
             elif var_y == 'RA':
-                axarr[rowi, coli].plot(V, RA, 'r', linewidth=0.5)
+                RAs = Vs/Js
+                ys = np.append(ys, RAs)
             elif var_y == 'R':
-                axarr[rowi, coli].plot(V, R, 'r', linewidth=0.5)
-            elif var_y == 'dJdV':
-                axarr[rowi, coli].plot(V, np.gradient(J, V), 'b', linewidth=0.1)
+                Rs = Vs/(Js*area)
+                ys = np.append(ys, Rs)
 
-            axarr[rowi, coli].set_xticks([])
-            axarr[rowi, coli].set_xlim([min_V, max_V])
-            if fix_y_range:
-                axarr[rowi, coli].set_yticks([])
-                axarr[rowi, coli].set_ylim([-float(ylim_nega), float(ylim_pos)])
+        ## Plot data XY
+        #print('Plotting t0 =', t0)
+        #if var_y == 'J':
+        #    axarr[rowi, coli].plot(Vs, Js, 'b', linewidth=0.5)
+        #elif var_y == 'RA':
+        #    axarr[rowi, coli].plot(Vs, RAs, 'r', linewidth=0.5)
+        #elif var_y == 'R':
+        #    axarr[rowi, coli].plot(Vs, Rs, 'r', linewidth=0.5)
+        #elif var_y == 'dJdV':
+        #    axarr[rowi, coli].plot(Vs, np.gradient(Js, Vs), 'b', linewidth=0.1)
 
-        if t0s == []:
-            axarr[rowi, coli].set_xticks([])
+        # Scatter XY
+        print('Plotting t0 =', t0)
+
+        if var_y == 'J':
+            axarr[rowi, coli].scatter(Vs, Js, s=1, c=list(range(len(Vs))), cmap=cm.rainbow, edgecolor='none')  # s: size
+        elif var_y == 'RA':
+            axarr[rowi, coli].scatter(Vs, RAs, s=1, edgecolor='none')
+        elif var_y == 'R':
+            axarr[rowi, coli].scatter(Vs, Rs, s=1, edgecolor='none')
+        elif var_y == 'dJdV':
+            axarr[rowi, coli].scatter(Vs, np.gradient(Js, Vs), s=1, edgecolor='none')
+
+        axarr[rowi, coli].set_xticks([])
+        axarr[rowi, coli].set_xlim([min_V, max_V])
+        if fix_y_range:
             axarr[rowi, coli].set_yticks([])
+            axarr[rowi, coli].set_ylim([-float(ylim_nega), float(ylim_pos)])
 
         print()  # newline
 
-
-plt.savefig(png_file_name, dpi=300, transparent=True)
+plt.show()
+#plt.savefig(png_file_name, dpi=300, transparent=True)
