@@ -12,14 +12,26 @@ else:
 class Agilent4156C(BaseInstr):
     def __init__(self, instr_rsrc, timeout_sec, use_us_commands, debug_mode=False):
         self._debug_mode = debug_mode
-        super().__init__(instr_rsrc, timeout_sec, self._debug_mode, 'HEWLETT-PACKARD,4156C')  # TODO: test
+        super().__init__(instr_rsrc, timeout_sec, self._debug_mode, 'HEWLETT-PACKARD,4156C')
         self._use_us_commands = use_us_commands
+        self._integ_time = 'SHOR'
         if debug_mode:
             pass
         else:
             self.w('*RST')  # Restore default configuration
             self.w('*CLS')  # Clear query buffer
             self.q_err()
+
+    @property
+    def integ_time(self):
+        return self._integ_time
+    @integ_time.setter
+    def integ_time(self, value):
+        if not value in ['SHOR', 'MED', 'LONG']:
+            raise ValueError("integ_time: 'SHOR' or 'MED', 'LONG'")
+        self._integ_time = value
+        self.w(":PAGE:MEAS:MSET:ITIM {}".format(self._integ_time))
+        self.q_err()
 
     def configure_smu(self, smu_num, mode, func, V_name=None, I_name=None):
         """
@@ -170,7 +182,7 @@ class Agilent4156C(BaseInstr):
                 raise RuntimeError
             return times, currents
 
-    def double_sweep_from_zero(self, gnd_smu, swp_smu, end_V, step_V=None, comp_I=10e-3):
+    def double_sweep_from_zero(self, gnd_smu, swp_smu, end_V, step_V=None, comp_I=10e-3, reset=True):
         """
         You can write v, i, _ = double_sweep_from_zero(...).
         If step_V is None -> #step = 1001 (max), step_V = end_V/1001
@@ -202,9 +214,11 @@ class Agilent4156C(BaseInstr):
         if self._debug_mode:
             return [0,0.001,0.002,0.001,0], [0,1e-6,2e-6,1e-6,0], False
         
-        is_P = end_V > 0  # is positive sweep
-        self.w('*RST')
-        self.q_err()
+        if reset:
+            self.w('*RST')
+            self.integ_time = self.integ_time
+            self.q_err()
+
         self.disable_all_units(gnd_smu, swp_smu)
         self.configure_smu(gnd_smu, 3, 3)
         self.configure_smu(swp_smu, 1, 1)
@@ -220,6 +234,7 @@ class Agilent4156C(BaseInstr):
             # TODO: stop at abnormal
 
         self.set_user_func('R', 'ohm', 'V{0}/I{0}'.format(swp_smu))
+        is_P = end_V > 0  # is positive sweep
         self.set_Y("I{}".format(swp_smu), True, 'R', True)
         self.configure_display(0 if is_P else end_V,
                                end_V if is_P else 0,
@@ -241,5 +256,7 @@ if __name__ == '__main__':
     rm = visa.ResourceManager()
     a_rsrc = rm.open_resource('GPIB0::18::INSTR')
     a = Agilent4156C(a_rsrc, 600, False)
-    #a.double_sweep_from_zero(2, 1, 100e-3, 1e-3)
+    a.integ_time = 'MED'
+    a.double_sweep_from_zero(2, 1, 10e-3, 1e-3)
+    a.integ_time = 'SHOR'
     a.contact_test(2, 1, 10e-3)
