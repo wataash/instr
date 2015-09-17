@@ -127,8 +127,34 @@ def log_list(start, end, steps):
         raise ValueError('steps should be int.')
     return [start * (end/start)**(n/steps) for n in range(steps + 1)]
 
+def remove_xyz_by_x(remove_func, *kwargs):
+    """imcomplete."""
+    # TODO: complete
+    if len(kwargs) == 1:
+        # [(x,y,z), (x,y,z), ...]
+        xyzs = kwargs[0]
+        if isinstance(xyzs, list(list)):
+            raise NotImplementedError
+        elif isinstance(xyzs, np.ndarray):
+            raise NotImplementedError
+    elif len(kwargs) > 1:
+        # [x, x, ...], [y, ...], [z, ...], ...
+        if isinstance(kwargs[0], list):
+            raise NotImplementedError
+        elif isinstance(kwargs[0], np.ndarray):
+            delete_index = []
+            res = []
+            for i, x in enumerate(kwargs[0]):
+                if remove_func(x):
+                    delete_index.append(i)
+            for items in kwargs:
+                res.append(np.delete(items, delete_index))
+            return res
+
 
 if __name__ == '__main__':
+    tmp = remove_xyz_by_x(lambda x: x < 10, np.array([2,4,6,8,10,12,14]), np.array([1,2,3,4,5,6,7]))
+
     tmp = log_list(1, 10000, 30)
     tmp = log_list(-1, -10, 10)
     tmp = log_list(10, 1, 10)
