@@ -137,6 +137,7 @@ try:
             t0 = int(time.strftime('%Y%m%d%H%M%S'))  # 20150830203015
             Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, None, j['agi_comp'])
             points = len(Vs)
+            # XY offset: UPDATE parameters SET X=X+8, Y=Y+12 WHERE sample="E0339 X9-12 Y13-16" and mesa="D56.3"
             cursor.execute('INSERT INTO parameters(t0,sample,X,Y,mesa,status,measPoints,compliance,voltage,instrument) \
                             VALUES(?,?,?,?,?,?,?,?,?,?)',
                             (t0, j['sample'], X, Y, j['mesa'],
@@ -148,6 +149,7 @@ try:
                 time.sleep(1)  # To avoid duplicates of "t0" in database
             if aborted:
                 break
+        # TODO: calculate R
 
 except:
     if not debug_mode:

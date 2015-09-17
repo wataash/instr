@@ -49,6 +49,7 @@
     <Compile Include="pa300_convert_old_txt_to_sql.py" />
     <Compile Include="pa300_IV_sweep.py" />
     <Compile Include="pa300_plot_matrix.py" />
+    <Compile Include="pa300_plot_R_XY.py" />
     <Compile Include="pa300_theta.py" />
     <Compile Include="setup.py">
       <SubType>Code</SubType>
