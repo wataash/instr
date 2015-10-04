@@ -13,32 +13,32 @@ from lib.algorithms import remove_xyz_by_x
 
 
 # Configurations ---------------------------------------------------------------
+# None: auto (get from databse)
+
 sqlite3_file = os.path.expanduser('~') + '/Documents/instr_data/IV.sqlite3'
 
-# Device data
+# Device
 sample = 'E0326-2-1'
 mesa = ['D169', 'D56.3', 'D16.7', 'D5.54'][0]
 dia = {'D169': 169e-6, 'D56.3': 56.3e-6, 'D16.7': 16.7e-6, 'D5.54': 5.54e-6}[mesa] # diameter [m]
 area = math.pi * (dia/2)**2  # [m^2]
 
-# Bug: Error when (min_X == max_X) or (min_Y == max_Y)
+# Bug: Error when (min_X == max_X) or (min_Y == max_Y) at axarr[rowi, coli]
 # They must be (min_X < max_X) and (min_Y < max_Y).
-min_X, max_X, min_Y, max_Y = (1, 11, 1, 4)
+min_X, max_X, min_Y, max_Y = (None, None, None, None)
 
 # Plot config
-fix_y_range = False
-max_V = 0.100
-min_V = -0.100
+V_min, V_max = (None, None)
 remove_V = 0.020 # for R, RA
+remove_V = None
 var_y = ['J', 'RA', 'R'][0]
 dict_unit = {'J': 'Am2', 'RA': 'ohmm2', 'R': 'ohm'}
+fix_ylim = False
 dict_ylim_nega = {'J': '-1E-5', 'RA': '0', 'R': '0'}
 dict_ylim_pos = {'J': '1E-5', 'RA': '1E-1', 'R': '1E6'}
 
 
 # Calculations -----------------------------------------------------------------
-
-
 # Number of columns and rows in matrix plot
 numX = max_X - min_X + 1
 numY = max_Y - min_Y + 1
@@ -47,17 +47,17 @@ unit = dict_unit[var_y]
 ylim_nega = dict_ylim_nega[var_y]
 ylim_pos = dict_ylim_pos[var_y]
 
-# Set file name without extension (base)
+# Set png file name
 save_dir = os.path.expanduser('~/Desktop')
-if fix_y_range:
+if fix_ylim:
     # E0339_D169_RA_1E11_ohmm2_-0.2V_0.2V.png
-    save_file_name_base = save_dir + '/{sample}_{mesa}_X{min_X}-{max_X}_Y{min_Y}-{max_Y}_{var_y}_{ylim_nega}_{ylim_pos}_{unit}_{min_V}V_{max_V}V'. \
-        format(sample=sample, mesa=mesa, min_X=min_X, max_X=max_X, min_Y=min_Y, max_Y=max_Y, var_y=var_y, unit=unit, ylim_nega=ylim_nega, ylim_pos=ylim_pos, min_V=min_V, max_V=max_V)
+    save_file_name_base = save_dir + '/{sample}_{mesa}_X{min_X}-{max_X}_Y{min_Y}-{max_Y}_{var_y}_{ylim_nega}_{ylim_pos}_{unit}_{min_V}V_{max_V}V.png'. \
+        format(sample=sample, mesa=mesa, min_X=min_X, max_X=max_X, min_Y=min_Y, max_Y=max_Y, var_y=var_y, unit=unit, ylim_nega=ylim_nega, ylim_pos=ylim_pos, min_V=V_min, max_V=V_max)
 else:
     # E0339_D169_RA_auto_ohmm2_-0.2V_0.2V.png
-    save_file_name_base = save_dir + '/{sample}_{mesa}_X{min_X}-{max_X}_Y{min_Y}-{max_Y}_{var_y}_auto_{unit}_{min_V}V_{max_V}V'. \
-        format(sample=sample, mesa=mesa, min_X=min_X, max_X=max_X, min_Y=min_Y, max_Y=max_Y, var_y=var_y, unit=unit, min_V=min_V, max_V=max_V)
-print('Save to: {}.ext'.format(save_file_name_base))
+    save_file_name_base = save_dir + '/{sample}_{mesa}_X{min_X}-{max_X}_Y{min_Y}-{max_Y}_{var_y}_auto_{unit}_{min_V}V_{max_V}V.png'. \
+        format(sample=sample, mesa=mesa, min_X=min_X, max_X=max_X, min_Y=min_Y, max_Y=max_Y, var_y=var_y, unit=unit, min_V=V_min, max_V=V_max)
+print('Save to:', save_file_name_base)
 
 # Connect to database
 sqlite3_connection = sqlite3.connect(sqlite3_file)
@@ -68,7 +68,7 @@ cursor = sqlite3_connection.cursor()
 print('Making subplots frame...')
 # Takes long time. figsize: inches. (300dpi -> about (300numX px, 300numY px)
 f, axarr = plt.subplots(numY, numX, figsize=(numX, numY), facecolor='w')
-if fix_y_range:
+if fix_ylim:
     f.subplots_adjust(top=1, bottom=0, left=0, right=1, wspace=0, hspace=0)
 else:
     f.subplots_adjust(top=0.99, bottom=0.01, left=0.01, right=0.99, wspace=0, hspace=0)
@@ -126,7 +126,7 @@ for Y in range(min_Y, max_Y + 1):
             elif var_y == 'dJdV':
                 dJdV_new = np.gradient(Js_new, Vs_new)  # TODO: implement
                 ys = np.append(ys, dJdV_new)
-        xys_in_range = remove_xyz_by_x(lambda x: not min_V < x < max_V, xs, ys)
+        xys_in_range = remove_xyz_by_x(lambda x: not V_min < x < V_max, xs, ys)
         ys_in_range = xys_in_range[1]
 
         # Plot
@@ -134,8 +134,8 @@ for Y in range(min_Y, max_Y + 1):
         ax.scatter(xs, ys, s=0.1, c=list(range(len(xs))), cmap=cm.rainbow, edgecolor='none')  # s: size
 
         ax.set_xticks([])
-        ax.set_xlim([min_V, max_V])
-        if fix_y_range:
+        ax.set_xlim([V_min, V_max])
+        if fix_ylim:
             ax.set_yticks([])
             ax.set_ylim([-float(ylim_nega), float(ylim_pos)])
         elif var_y in ['J', 'dJdV']:

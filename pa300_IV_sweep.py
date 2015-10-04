@@ -19,12 +19,14 @@ from lib.suss_pa300 import SussPA300
 
 
 # Set True while development without instruments.
-debug_mode = True
+debug_mode = False
 
 # If already calibrated theta
-skip_calibrate_theta = False
+skip_calibrate_theta = True
 if skip_calibrate_theta:
-    theta_pattern_tilled = 0.9157978788395411
+    # TODO: query meas IV now?
+    theta_pattern_tilled = -0.4324730115775566
+    input('Use theta_pattern_tilled: {}'.format(theta_pattern_tilled))
 
 # Get configrations ------------------------------------------------------------
 with open(os.path.expanduser('~') + '/Dropbox/master-db/src-master-db/pa300_IV_sweep.json') as f:
@@ -92,10 +94,9 @@ try:
         suss.velocity = 1
         suss.separate()
 
-    # Measure I-Vs
+    # Measure I-Vs.  Be sure separate!
     for mesa_id in j['mesa_ids']:
         print('mesa_id:', mesa_id)
-        suss.separate()
         m_mask, m_name, m_area, m_circumference, \
             m_x_offset_center, m_y_offset_center, m_x_offset_probe, m_y_offset_probe = \
             cursor.execute('SELECT mask, name, area, circumference, \
@@ -104,14 +105,15 @@ try:
                             (str(mesa_id),)).fetchone()
         for (X, Y) in XYs:
             print('X{}Y{}'.format(X, Y))
-            if not first_measurement:
-                suss.align()  # Already separate if first
+            #if not first_measurement:
+            #    suss.align()  # Already separate if first
             x_next_subs = s_x00 + m_x_offset_center + m_x_offset_probe + X * s_d_X
             y_next_subs = s_y00 + m_y_offset_center + m_y_offset_probe + Y * s_d_Y
             (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
             suss.move_to_xy_from_home(x_next_from_home, y_next_from_home)
             suss.contact()
-            if first_measurement:
+            if first_measurement and mesa_id == j['mesa_ids'][0]:
+                # TODO: move upper
                 if not debug_mode:
                     input('Contact the prober.')
                 first_measurement = False
@@ -131,7 +133,9 @@ try:
                     time.sleep(1)  # To avoid duplicates of "t0" in database
                 if aborted:
                     break
+            suss.align()
             # TODO: calculate R
+        suss.separate()
 
 except:
     if not debug_mode:
