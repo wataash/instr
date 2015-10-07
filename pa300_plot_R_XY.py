@@ -8,15 +8,15 @@ import matplotlib.pyplot as plt
 
 
 # Configurations ---------------------------------------------------------------
-sqlite3_file = os.path.expanduser('~') + '/Documents/instr_data/IV.sqlite3'
+#sqlite3_file = os.path.expanduser('~') + '/Documents/instr_data/IV.sqlite3'
 
 # Device data
-sample = 'E0339 X9-12 Y13-16'
-mesa = ['D169', 'D56.3', 'D16.7', 'D5.54'][0]
-var_y = ['R', 'RA'][0]
-c_min = {'R': 100, 'RA': 1e-10}[var_y]
-c_max = {'R': 1e9, 'RA': 1e-5}[var_y]
-min_X, max_X, min_Y, max_Y = (1, 17, 1, 17)
+#sample = 'E0339 X9-12 Y13-16'
+#mesa = ['D169', 'D56.3', 'D16.7', 'D5.54'][0]
+#var_y = ['R', 'RA'][0]
+#c_min = {'R': 100, 'RA': 1e-10}[var_y]
+#c_max = {'R': 1e9, 'RA': 1e-5}[var_y]
+#min_X, max_X, min_Y, max_Y = (1, 17, 1, 17)
 
 
 # Calculations -----------------------------------------------------------------
@@ -26,8 +26,8 @@ png_file_name += '/Desktop/{sample}_{mesa}_R-XY.png'.format(sample=sample, mesa=
 print('Save to:', png_file_name)
 
 # Connect to database
-sqlite3_connection = sqlite3.connect(sqlite3_file)
-cursor = sqlite3_connection.cursor()
+#sqlite3_connection = sqlite3.connect(sqlite3_file)
+#cursor = sqlite3_connection.cursor()
 
 
 # Plot -------------------------------------------------------------------------

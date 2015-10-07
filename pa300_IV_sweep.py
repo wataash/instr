@@ -1,6 +1,4 @@
-﻿# TODO: database-friend, for dev in devs, finnaly copy to dropbox
-
-# Std libs
+﻿# Std libs
 import json
 import math
 import os
@@ -37,16 +35,20 @@ if debug_mode:
 
 # Connect to database
 if debug_mode:
-    j['sqlite3_file'] = os.path.expanduser('~') + '/' + j['sqlite3_file_debug']
-    j['sqlite3_file_on_db'] = os.path.expanduser('~') + '/Desktop/' + j['sqlite3_file_on_db_debug']
+    db_params = os.path.expanduser('~') + '/' + j['db_params_debug']
+    db_IVs = os.path.expanduser('~') + '/' + j['db_IVs_debug']
+    db_copy_dir = os.path.expanduser('~') + '/Desktop'
 else:
-    j['sqlite3_file'] = os.path.expanduser('~') + '/' + j['sqlite3_file']
-    j['sqlite3_file_on_db'] = os.path.expanduser('~') + '/Dropbox/' + j['sqlite3_file_on_db']
-sqlite3_connection = sqlite3.connect(j['sqlite3_file'])
-cursor = sqlite3_connection.cursor()
+    db_params = os.path.expanduser('~') + '/' + j['db_params']
+    db_IVs = os.path.expanduser('~') + '/' + j['db_IVs']
+    db_copy_dir = os.path.expanduser('~') + '/' + j['db_copy_dir']
+conn_params = sqlite3.connect(db_params)
+conn_IVs = sqlite3.connect(db_IVs)
+cur_params = conn_params.cursor()
+cur_IVs = conn_IVs.cursor()
 
 s_width, s_height, s_theta_diag, s_x00, s_y00, s_d_X, s_d_Y, s_min_X, s_max_X, s_min_Y, s_max_Y = \
-    cursor.execute('SELECT width, height, theta_diag, x00, y00, d_X, d_Y, \
+    cur_params.execute('SELECT width, height, theta_diag, x00, y00, d_X, d_Y, \
                     min_X, max_X, min_Y, max_Y \
                     FROM samples WHERE id=?',
                     (str(j['sample_id']))).fetchone()
@@ -99,7 +101,7 @@ try:
         print('mesa_id:', mesa_id)
         m_mask, m_name, m_area, m_circumference, \
             m_x_offset_center, m_y_offset_center, m_x_offset_probe, m_y_offset_probe = \
-            cursor.execute('SELECT mask, name, area, circumference, \
+            cur_params.execute('SELECT mask, name, area, circumference, \
                             x_offset_center, y_offset_center, x_offset_probe, y_offset_probe \
                             FROM mesas WHERE id=?',
                             (str(mesa_id),)).fetchone()
@@ -121,14 +123,15 @@ try:
                 t0 = int(time.strftime('%Y%m%d%H%M%S'))  # 20150830203015
                 Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, None, j['agi_comp'])
                 points = len(Vs)
-                # XY offset: UPDATE parameters SET X=X+8, Y=Y+12 WHERE sample="E0339 X9-12 Y13-16" and mesa="D56.3"
-                cursor.execute('INSERT INTO parameters(t0,sample,X,Y,mesa,status,measPoints,compliance,voltage,instrument) \
+                # XY offset: UPDATE params SET X=X+8, Y=Y+12 WHERE sample="E0339 X9-12 Y13-16" and mesa="D56.3"
+                cur_params.execute('INSERT INTO params(t0,sample,X,Y,mesa,status,measPoints,compliance,voltage,instrument) \
                                 VALUES(?,?,?,?,?,?,?,?,?,?)',
                                 (t0, j['sample_id'], X, Y, mesa_id,
                                  255, points, j['agi_comp'], V, 'SUSS PA300 + Agilent 4156C'))
                 tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
-                cursor.executemany('''INSERT INTO IV(t0, V, I) VALUES(?, ?, ?)''', tmp)  # IV.id: autofilled
-                sqlite3_connection.commit()
+                cur_IVs.executemany('''INSERT INTO IVs(t0, V, I) VALUES(?, ?, ?)''', tmp)
+                conn_params.commit()
+                conn_IVs.commit()
                 if debug_mode:
                     time.sleep(1)  # To avoid duplicates of "t0" in database
                 if aborted:
@@ -156,7 +159,9 @@ else:
 
 finally:
     # Close the database
-    cursor.close()
-    shutil.copy2(j['sqlite3_file'], j['sqlite3_file_on_db'])  # TODO: test, mkdir if not exist
+    cur_params.close()
+    cur_IVs.close()
+    shutil.copy2(db_params, db_copy_dir)  # TODO: test, mkdir if not exist
+    shutil.copy2(db_IVs, db_copy_dir)
 
 input('Done.')
