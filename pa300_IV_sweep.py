@@ -18,7 +18,7 @@ from lib.suss_pa300 import SussPA300
 
 
 # Set True while development without instruments.
-debug_mode = False
+debug_mode = True
 
 # If already calibrated theta
 skip_calibrate_theta = False
@@ -41,8 +41,8 @@ cur_params = conn_params.cursor()
 conn_IVs = sqlite3.connect(c.sw_sql_IVs)
 cur_IVs = conn_IVs.cursor()
 
-s_width, s_height, s_theta_diag, s_x00, s_y00, s_d_X, s_d_Y, X_min, X_max, Y_min, Y_max = \
-    cur_params.execute('SELECT width, height, theta_diag, x00, y00, d_X, d_Y, \
+s_width, s_height, s_d_X, s_d_Y, X_min, X_max, Y_min, Y_max = \
+    cur_params.execute('SELECT width, height, d_X, d_Y, \
                     X_min, X_max, Y_min, Y_max \
                     FROM samples WHERE sample=?',
                     (c.sw_sample,)).fetchone()
@@ -73,18 +73,19 @@ try:
         suss.velocity = 25
         suss.separate()
         suss.velocity = 1
-        if not debug_mode:
-            input('Set substrate left bottom edge as home.')
-            suss.move_to_xy_from_home(-s_width, -s_height)
-            input('Right click substrate right top edge.')
-            (x_diagonal_from_home, y_diagonal_from_home, _) = suss.read_xyz('H')
-        else:
-            (x_diagonal_from_home, y_diagonal_from_home, _) = \
-                (-s_width - random.gauss(0, 50), -s_height - random.gauss(0, 50), 0)
-
         # Calibrate theta
-        theta_diagonal_tilled = math.atan(y_diagonal_from_home/x_diagonal_from_home) * 180/math.pi
-        theta_pattern_tilled = theta_diagonal_tilled - s_theta_diag
+        delta_X = X_max - X_min
+        delta_Y = Y_max - Y_min
+        theta_diagonal_true = math.atan(delta_Y*s_d_Y / delta_X*s_d_X) * 180 / math.pi
+        if debug_mode:
+            theta_diagonal_tilled = theta_diagonal_true + random.gauss(0, 3)
+        else:
+            input('Set X{}Y{} as home.'.format(X_min, Y_min))
+            suss.move_to_xy_from_home(- delta_X * d_X, - delta_Y * d_Y)
+            input('Right click X{} Y{}, press enter.'.format(X_max, Y_max))
+            (x99_tilled, y99_tilled, _) = suss.read_xyz('H')
+            theta_diagonal_tilled = math.atan(y99_tilled / x99_tilled) * 180 / math.pi
+        theta_pattern_tilled = theta_diagonal_tilled - theta_diagonal_true
         print('theta_pattern_tilled:', theta_pattern_tilled)
     else:
         suss.velocity = 1
@@ -106,36 +107,37 @@ try:
             print('X{}Y{}'.format(X, Y))
             #if not first_measurement:
             #    suss.align()  # Already separate if first
-            x_next_subs = s_x00 + m_x_offset_center + m_x_offset_probe + X * s_d_X
-            y_next_subs = s_y00 + m_y_offset_center + m_y_offset_probe + Y * s_d_Y
-            (x_next_from_home, y_next_from_home) = rotate_vector(-x_next_subs, -y_next_subs, theta_pattern_tilled)
+            s_x_next = m_x_offset_center + m_x_offset_probe + X * s_d_X
+            s_y_next = m_y_offset_center + m_y_offset_probe + Y * s_d_Y
+            (x_next_from_home, y_next_from_home) = \
+                rotate_vector(-s_x_next, -s_y_next, theta_pattern_tilled)
             suss.move_to_xy_from_home(x_next_from_home, y_next_from_home)
-        #    suss.contact()
-        #    if first_measurement and mesa == c.sw_mesas[0]:
-        #        # TODO: move upper
-        #        if not debug_mode:
-        #            input('Contact the prober.')
-        #        first_measurement = False
-        #    for V in c.sw_agi_Vs:
-        #        t0 = int(time.strftime('%Y%m%d%H%M%S'))  # 20150830203015
-        #        Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, None, c.sw_agi_comp)
-        #        points = len(Vs)
-        #        # XY offset: UPDATE params SET X=X+8, Y=Y+12 WHERE sample="E0339 X9-12 Y13-16" and mesa="D56.3"
-        #        cur_params.execute('INSERT INTO IV_params(t0,sample,X,Y,mesa,status,measPoints,compliance,voltage,instrument) \
-        #                        VALUES(?,?,?,?,?,?,?,?,?,?)',
-        #                        (t0, c.sw_sample, X, Y, mesa,
-        #                         255, points, c.sw_agi_comp, V, 'SUSS PA300 + Agilent 4156C'))
-        #        tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
-        #        cur_IVs.executemany('''INSERT INTO IVs(t0, V, I) VALUES(?, ?, ?)''', tmp)
-        #        conn_params.commit()
-        #        conn_IVs.commit()
-        #        if debug_mode:
-        #            time.sleep(1)  # To avoid duplicates of "t0" in database
-        #        if aborted:
-        #            break
-        #    suss.align()
-        #    # TODO: calculate R
-        #suss.separate()
+            suss.contact()
+            if first_measurement and mesa == c.sw_mesas[0]:
+                # TODO: move upper
+                if not debug_mode:
+                    input('Contact the prober.')
+                first_measurement = False
+            for V in c.sw_agi_Vs:
+                t0 = int(time.strftime('%Y%m%d%H%M%S'))  # 20150830203015
+                Vs, Is, aborted = agi.double_sweep_from_zero(2, 1, V, None, c.sw_agi_comp)
+                points = len(Vs)
+                # XY offset: UPDATE params SET X=X+8, Y=Y+12 WHERE sample="E0339 X9-12 Y13-16" and mesa="D56.3"
+                cur_params.execute('INSERT INTO IV_params(t0,sample,X,Y,mesa,status,measPoints,compliance,voltage,instrument) \
+                                VALUES(?,?,?,?,?,?,?,?,?,?)',
+                                (t0, c.sw_sample, X, Y, mesa,
+                                 255, points, c.sw_agi_comp, V, 'SUSS PA300 + Agilent 4156C'))
+                tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
+                cur_IVs.executemany('''INSERT INTO IVs(t0, V, I) VALUES(?, ?, ?)''', tmp)
+                conn_params.commit()
+                conn_IVs.commit()
+                if debug_mode:
+                    time.sleep(1)  # To avoid duplicates of "t0" in database
+                if aborted:
+                    break
+            suss.align()
+            # TODO: calculate R
+        suss.separate()
 
 except:
     if not debug_mode:
