@@ -20,38 +20,38 @@ from lib.suss_pa300 import SussPA300
 debug_mode = False
 
 # If already calibrated theta
-skip_calibrate_theta = True
+skip_calibrate_theta = False
 if skip_calibrate_theta:
     # TODO: query meas IV now?
     theta_pattern_tilled = -0.4324730115775566
     input('Use theta_pattern_tilled: {}'.format(theta_pattern_tilled))
 
 # Get configrations ------------------------------------------------------------
-with open(os.path.expanduser('~') + '/Dropbox/master-db/src-master-db/pa300_IV_sweep.json') as f:
+with open(os.path.expanduser('~') + '/Dropbox/master-db/src-master-db/pa300_config.json') as f:
     j = json.load(f)
 if debug_mode:
-    j['sample_id'] = 5
-    j['mesa_ids'] = [17, 17]
+    pass
+    #j['sample'] = 
+    #j['mesas'] = [""]
 
 # Connect to database
 if debug_mode:
-    db_params = os.path.expanduser('~') + '/' + j['db_params_debug']
-    db_IVs = os.path.expanduser('~') + '/' + j['db_IVs_debug']
-    db_copy_dir = os.path.expanduser('~') + '/Desktop'
+    conn_params = sqlite3.connect()
+    conn_IVs = sqlite3.connect()
+    #db_copy_dir = os.path.expanduser('~') + '/Desktop'
 else:
-    db_params = os.path.expanduser('~') + '/' + j['db_params']
-    db_IVs = os.path.expanduser('~') + '/' + j['db_IVs']
-    db_copy_dir = os.path.expanduser('~') + '/' + j['db_copy_dir']
-conn_params = sqlite3.connect(db_params)
-conn_IVs = sqlite3.connect(db_IVs)
+    conn_params = sqlite3.connect(os.path.expanduser('~/Documents/instr_data/params.sqlite3'))
+    conn_IVs = sqlite3.connect(os.path.expanduser('~/Documents/instr_data/IV_') + j['sample'] + '.sqlite3')
+    #db_copy_dir = os.path.expanduser('~') + '/' + j['db_copy_dir']
+
 cur_params = conn_params.cursor()
 cur_IVs = conn_IVs.cursor()
 
 s_width, s_height, s_theta_diag, s_x00, s_y00, s_d_X, s_d_Y, s_min_X, s_max_X, s_min_Y, s_max_Y = \
     cur_params.execute('SELECT width, height, theta_diag, x00, y00, d_X, d_Y, \
-                    min_X, max_X, min_Y, max_Y \
-                    FROM samples WHERE id=?',
-                    (str(j['sample_id']))).fetchone()
+                    X_min, X_max, Y_min, Y_max \
+                    FROM samples WHERE sample=?',
+                    (j['sample'],)).fetchone()
 
 XYs = zigzag_XY(s_min_X, s_min_Y, s_max_X, s_max_Y, 'r') # TODO: exception for first
 
@@ -97,7 +97,7 @@ try:
         suss.separate()
 
     # Measure I-Vs.  Be sure separate!
-    for mesa_id in j['mesa_ids']:
+    for mesa in j['mesas']:
         print('mesa_id:', mesa_id)
         m_mask, m_name, m_area, m_circumference, \
             m_x_offset_center, m_y_offset_center, m_x_offset_probe, m_y_offset_probe = \
@@ -161,7 +161,7 @@ finally:
     # Close the database
     cur_params.close()
     cur_IVs.close()
-    shutil.copy2(db_params, db_copy_dir)  # TODO: test, mkdir if not exist
-    shutil.copy2(db_IVs, db_copy_dir)
+    #shutil.copy2(db_params, db_copy_dir)  # TODO: test, mkdir if not exist
+    #shutil.copy2(db_IVs, db_copy_dir)
 
 input('Done.')
