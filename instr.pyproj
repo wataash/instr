@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56607090-6be0-449e-b724-5c88fb9d41df}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>pa300_plot_R_X.py</StartupFile>
+    <StartupFile>pa300_IV_sweep.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -26,6 +26,7 @@
     <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="constants.py" />
     <Compile Include="IVBT1_IT.py" />
     <Compile Include="IVBT1_IB_sweep.py" />
     <Compile Include="lib\agilent4156c.py" />
@@ -49,6 +50,9 @@
     <Compile Include="pa300_convert_old_txt_to_sql.py" />
     <Compile Include="pa300_IV_sweep.py" />
     <Compile Include="pa300_plot_matrix.py" />
+    <Compile Include="pa300_plot_Rdice_XY.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="pa300_plot_R_X.py">
       <SubType>Code</SubType>
     </Compile>
