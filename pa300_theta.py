@@ -11,27 +11,30 @@ import sqlite3
 # Non-std libs
 import visa
 # My libs
+import constants as c
 from lib.algorithms import rotate_vector
 from lib.suss_pa300 import SussPA300
 
 
 debug_mode = False
-with open(os.path.expanduser('~/Dropbox/master-db/src-master-db/pa300_config.json')) as f:
-    j = json.load(f)
-conn_params = sqlite3.connect(j['db_params_file'].replace('home', os.path.expanduser('~')))
+conn_params = sqlite3.connect(c.sql_params)
 cur_params = conn_params.cursor()
 
-d_X, d_Y, X_min, X_max, Y_min, Y_max = cur_params.execute('SELECT d_X, d_Y, X_min, X_max, Y_min, Y_max FROM samples WHERE sample=?', (j['sample'],)).fetchone()
-delta_X = X_max - X_min - 1
-delta_Y = Y_max - Y_min - 1
+d_X, d_Y, X_min, X_max, Y_min, Y_max = \
+    cur_params.execute(
+        'SELECT d_X, d_Y, X_min, X_max, Y_min, Y_max FROM samples \
+         WHERE sample=?',
+         (c.sw_sample,)).fetchone()
+delta_X = X_max - X_min
+delta_Y = Y_max - Y_min
 
 rm = visa.ResourceManager()
 print(rm.list_resources())
 if debug_mode:
-    suss = SussPA300(None, j['visa_timeout_sec_suss'], debug_mode)
+    suss = SussPA300(None, c.visa_timeout_sec_suss, debug_mode)
 else:
-    suss_rsrc = rm.open_resource(j['visa_rsrc_name_suss'])
-    suss = SussPA300(suss_rsrc, j['visa_timeout_sec_suss'], debug_mode)
+    suss_rsrc = rm.open_resource(c.visa_rsrc_name_suss)
+    suss = SussPA300(suss_rsrc, c.visa_timeout_sec_suss, debug_mode)
 
 suss.velocity = 25
 suss.separate()
