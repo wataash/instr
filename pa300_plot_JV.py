@@ -1,4 +1,4 @@
-﻿# Std libs
+# Std libs
 import math
 import os
 import sqlite3
@@ -10,10 +10,10 @@ import constants as c
 
 
 #mesa = c.mesas[4]
-var_z = ['R', 'RA'][1]
+var_z = ['J', 'R', 'RA'][0]
 auto_color = False
-c_min = {'R': 1e3, 'RA': 1e-8}[var_z]
-c_max = {'R': 1e5, 'RA': 1e-3}[var_z]
+c_min = {'J': 0, 'R': 1e3, 'RA': 1e-8}[var_z]
+c_max = {'J': 1, 'R': 1e5, 'RA': 1e-3}[var_z]
 
 
 

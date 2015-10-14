@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56607090-6be0-449e-b724-5c88fb9d41df}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>pa300_IV_sweep.py</StartupFile>
+    <StartupFile>pa300_plot_R_X.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -49,6 +49,9 @@
     <Compile Include="pa300_calculate_R_near_0V.py" />
     <Compile Include="pa300_convert_old_txt_to_sql.py" />
     <Compile Include="pa300_IV_sweep.py" />
+    <Compile Include="pa300_plot_JV.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="pa300_plot_matrix.py" />
     <Compile Include="pa300_plot_Rdice_XY.py">
       <SubType>Code</SubType>
@@ -57,7 +60,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="pa300_plot_R_XY.py" />
-    <Compile Include="pa300_theta.py" />
     <Compile Include="setup.py">
       <SubType>Code</SubType>
     </Compile>
