@@ -103,10 +103,20 @@ try:
         # TODO: offset exceptions
         print(m_x_offset_probe, m_y_offset_probe)
         # TODO: hard code
-        if mesa == 'D169':
-            m_x_offset_probe, m_y_offset_probe = 85, -85
-        else:
-            m_x_offset_probe, m_y_offset_probe = 70, -70
+        if c.sw_sample == 'E0350-1':
+            if mesa == 'D169':
+                m_x_offset_probe, m_y_offset_probe = 85, -85
+            else:
+                m_x_offset_probe, m_y_offset_probe = 70, -70
+            if mesa == 'D16.7':
+                XYs = zigzag_XY(3, 9, X_max, Y_max, 'L')
+            else:
+                XYs = zigzag_XY(X_min, Y_min, X_max, Y_max, 'r')
+        elif c.sw_sample == 'E0350-2':
+            if mesa == c.sw_mesas[0]:
+                XYs = zigzag_XY(1, 1, X_max, Y_max, 'L')
+            else:
+                XYs = zigzag_XY(X_min, Y_min, X_max, Y_max, 'r')
         for (X, Y) in XYs:
             print('X{}Y{}'.format(X, Y))
             #if not first_measurement:
