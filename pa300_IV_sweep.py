@@ -1,5 +1,5 @@
 ﻿# Std libs
-import json
+from collections import defaultdict
 import math
 import os
 import random
@@ -18,7 +18,7 @@ from lib.suss_pa300 import SussPA300
 
 
 # Set True while development without instruments.
-debug_mode = False
+debug_mode = True
 
 # If already calibrated theta
 skip_calibrate_theta = True
@@ -29,25 +29,31 @@ if skip_calibrate_theta:
 
 if debug_mode:
     c.sw_sample = 'debug_sample'
-    c.sw_mesas = c.sw_mesas_debug
-    c.sql_params = c.sql_params_debug
-    c.sw_sql_IVs = c.sql_IVs_debug
+    c.sw_mesas = ['debug_mesa']
+    c.sql_params_local = c.sql_params_local_debug
+    c.sw_sql_IVs = c.sql_IVs_local_debug
 else:
     import visa
 
 # Connect to database
-conn_params = sqlite3.connect(c.sql_params)
+conn_params = sqlite3.connect(c.sql_params_local)
 cur_params = conn_params.cursor()
 conn_IVs = sqlite3.connect(c.sw_sql_IVs)
 cur_IVs = conn_IVs.cursor()
 
-s_width, s_height, d_X, d_Y, X_min, X_max, Y_min, Y_max = \
-    cur_params.execute('SELECT width, height, d_X, d_Y, \
-                    X_min, X_max, Y_min, Y_max \
-                    FROM samples WHERE sample=?',
-                    (c.sw_sample,)).fetchone()
+mask, s_width, s_height, X_min, X_max, Y_min, Y_max = \
+    cur_params.execute('SELECT \
+                        mask, width, height, X_min, X_max, Y_min, Y_max \
+                        FROM samples WHERE sample=?',
+                       (c.sw_sample,)).fetchone()
 
-XYs = zigzag_XY(X_min, Y_min, X_max, Y_max, 'r') # TODO: exception for first
+d_X, d_Y = cur_params.execute('SELECT d_X, d_Y FROM masks WHERE mask=?',
+                              (mask,)).fetchone()
+
+# default XYs
+dicXYs = defaultdict(lambda: zigzag_XY(X_min, Y_min, X_max, Y_max, 'r'))
+# exception XYs
+dicXYs['D56.3'] = zigzag_XY(2, 1, 2, 2, 'r')
 
 
 # Initialize -------------------------------------------------------------------
@@ -68,69 +74,50 @@ suss = SussPA300(suss_rsrc, c.visa_timeout_sec_suss, debug_mode)
 try:
     first_measurement = True
 
+    suss.velocity = 25
+    suss.separate()
+    suss.velocity = 1
+
     if not skip_calibrate_theta:
-        # Get dimensions
-        suss.velocity = 25
-        suss.separate()
-        suss.velocity = 1
         # Calibrate theta
         delta_X = X_max - X_min
         delta_Y = Y_max - Y_min
-        theta_diagonal_true = math.atan((delta_Y*d_Y) / (delta_X*d_X)) * 180 / math.pi
-        if debug_mode:
-            theta_diagonal_tilled = theta_diagonal_true + random.gauss(0, 3)
+        if delta_X <= 1 or delta_Y <= 1:
+            input('calibrate theta to 0 mannually.')
+            theta_pattern_tilled = 0
         else:
-            input('Set X{}Y{} as home.'.format(X_min, Y_min))
-            suss.move_to_xy_from_home(- delta_X * d_X, - delta_Y * d_Y)
-            input('Right click X{} Y{}, press enter.'.format(X_max, Y_max))
-            (x99_tilled, y99_tilled, _) = suss.read_xyz('H')
-            theta_diagonal_tilled = math.atan(y99_tilled / x99_tilled) * 180 / math.pi
-        theta_pattern_tilled = theta_diagonal_tilled - theta_diagonal_true
-        print('theta_pattern_tilled:', theta_pattern_tilled)
-    else:
-        suss.velocity = 1
-        suss.separate()
+            theta_diagonal_true = math.atan((delta_Y*d_Y) / (delta_X*d_X)) * 180 / math.pi
+            if debug_mode:
+                theta_diagonal_tilled = theta_diagonal_true + random.gauss(0, 3)
+            else:
+                input('Set X{}Y{} as home.'.format(X_min, Y_min))
+                suss.move_to_xy_from_home(- delta_X * d_X, - delta_Y * d_Y)
+                input('Right click X{} Y{}, press enter.'.format(X_max, Y_max))
+                (x99_tilled, y99_tilled, _) = suss.read_xyz('H')
+                theta_diagonal_tilled = math.atan(y99_tilled / x99_tilled) * 180 / math.pi
+            theta_pattern_tilled = theta_diagonal_tilled - theta_diagonal_true
+            print('theta_pattern_tilled:', theta_pattern_tilled)
 
     # Measure I-Vs.  Be sure separate!
     for mesa in c.sw_mesas:
         print('mesa:', mesa)
-        m_mask, m_name, m_area, m_circumference, \
-            m_x_offset_center, m_y_offset_center, m_x_offset_probe, m_y_offset_probe = \
-            cur_params.execute('SELECT mask, name, area, circumference, \
-                                x_offset_center, y_offset_center, x_offset_probe, y_offset_probe \
-                                FROM mesas WHERE name=?',
-                                (mesa,)).fetchone()
-        # TODO: offset exceptions
-        print(m_x_offset_probe, m_y_offset_probe)
-        # TODO: hard code
-        if c.sw_sample == 'E0350-1':
-            if mesa == 'D169':
-                m_x_offset_probe, m_y_offset_probe = 85, -85
-            else:
-                m_x_offset_probe, m_y_offset_probe = 70, -70
-            if mesa == 'D16.7':
-                XYs = zigzag_XY(3, 9, X_max, Y_max, 'L')
-            else:
-                XYs = zigzag_XY(X_min, Y_min, X_max, Y_max, 'r')
-        elif c.sw_sample == 'E0350-2':
-            if mesa == c.sw_mesas[0]:
-                XYs = zigzag_XY(1, 1, X_max, Y_max, 'L')
-            else:
-                XYs = zigzag_XY(X_min, Y_min, X_max, Y_max, 'r')
-        for (X, Y) in XYs:
+        m_x_probe, m_y_probe = \
+            cur_params.execute('SELECT xm_probe, ym_probe \
+                                FROM mesas WHERE mask=? AND mesa=?',
+                                (mask, mesa,)).fetchone()
+        # TODO: xm ym exceptions
+        for (X, Y) in dicXYs[mesa]:
             print('X{}Y{}'.format(X, Y))
             #if not first_measurement:
             #    suss.align()  # Already separate if first
-            s_x_next = m_x_offset_center + m_x_offset_probe + (X-1)*d_X
-            s_y_next = m_y_offset_center + m_y_offset_probe + (Y-1)*d_Y
+            s_x_next = m_x_probe + (X-1)*d_X
+            s_y_next = m_y_probe + (Y-1)*d_Y
             (x_next_from_home, y_next_from_home) = \
                 rotate_vector(-s_x_next, -s_y_next, theta_pattern_tilled)
             suss.move_to_xy_from_home(x_next_from_home, y_next_from_home)
             suss.contact()
             if first_measurement and mesa == c.sw_mesas[0]:
-                # TODO: move upper
-                if not debug_mode:
-                    input('Contact the prober.')
+                input('Contact the prober.')
                 first_measurement = False
             for V in c.sw_agi_Vs:
                 t0 = int(time.strftime('%Y%m%d%H%M%S'))  # 20150830203015
@@ -138,9 +125,10 @@ try:
                 points = len(Vs)
                 # XY offset: UPDATE params SET X=X+8, Y=Y+12 WHERE sample="E0339 X9-12 Y13-16" and mesa="D56.3"
                 cur_params.execute('INSERT INTO IV_params(t0,sample,X,Y,mesa,status,measPoints,compliance,voltage,instrument) \
-                                VALUES(?,?,?,?,?,?,?,?,?,?)',
-                                (t0, c.sw_sample, X, Y, mesa,
-                                 255, points, c.sw_agi_comp, V, 'SUSS PA300 + Agilent 4156C'))
+                                    VALUES(?,?,?,?,?,?,?,?,?,?)',
+                                   (t0, c.sw_sample, X, Y, mesa,
+                                    255, points, c.sw_agi_comp, V, 'SUSS PA300 + Agilent 4156C')
+                                  )
                 tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
                 cur_IVs.executemany('''INSERT INTO IVs(t0, V, I) VALUES(?, ?, ?)''', tmp)
                 conn_params.commit()
@@ -150,7 +138,6 @@ try:
                 if aborted:
                     break
             suss.align()
-            # TODO: calculate R
         suss.separate()
 
 except:
