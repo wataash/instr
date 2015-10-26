@@ -52,7 +52,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="pa300_plot_I_VXY.py" />
-    <Compile Include="pa300_plot_R_XY.py" />
     <Compile Include="test_local.py">
       <SubType>Code</SubType>
     </Compile>
