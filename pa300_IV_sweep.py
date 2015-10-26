@@ -20,17 +20,16 @@ from lib.agilent4156c import Agilent4156C
 from lib.suss_pa300 import SussPA300
 
 
-sample = 'test sample'
 if debug_mode:
-    sample = 'debug_sample'
-sql_IVs_local = c.local_dir + 'IVs_' + sample + '.sqlite3'
+    c.sw_sample = 'debug_sample'
+sql_IVs_local = c.local_dir + 'IVs_' + c.sw_sample + '.sqlite3'
 
 # Connect to database
 if debug_mode:
     conn_params = sqlite3.connect(c.sql_params_local_debug)
     conn_IVs = sqlite3.connect(c.sql_IVs_local_debug)
 else:
-    conn_params = sqlite3.connect(c.sql_params_dropbox)
+    conn_params = sqlite3.connect(c.sql_params_local)
     conn_IVs = sqlite3.connect(sql_IVs_local)
 cur_params = conn_params.cursor()
 cur_IVs = conn_IVs.cursor()
@@ -38,7 +37,7 @@ cur_IVs = conn_IVs.cursor()
 mask, X_min, X_max, Y_min, Y_max = \
     cur_params.execute('SELECT mask, X_min, X_max, Y_min, Y_max \
                         FROM samples WHERE sample=?',
-                       (sample,)).fetchone()
+                       (c.sw_sample,)).fetchone()
 
 # parameters
 if debug_mode:
@@ -57,7 +56,6 @@ agi_Vs = [0.2, -0.2]
 # If already calibrated theta
 skip_calibrate_theta = False
 if skip_calibrate_theta:
-    # TODO: query meas IV now?
     theta_pattern_tilled = -0.05113669581916014
     input('Use theta_pattern_tilled: {}'.format(theta_pattern_tilled))
 
@@ -138,7 +136,7 @@ try:
                 # XY offset: UPDATE params SET X=X+8, Y=Y+12 WHERE sample="E0339 X9-12 Y13-16" and mesa="D56.3"
                 cur_params.execute('INSERT INTO IV_params(t0,sample,X,Y,mesa,status,measPoints,compliance,voltage,instrument) \
                                     VALUES(?,?,?,?,?,?,?,?,?,?)',
-                                   (t0, sample, X, Y, mesa,
+                                   (t0, c.sw_sample, X, Y, mesa,
                                     255, points, agi_comp, V, 'SUSS PA300 + Agilent 4156C')
                                   )
                 tmp = zip([t0] * points, Vs, Is)  # [(t0, V0, I0), (t0, V1, I1), ...]
@@ -156,7 +154,6 @@ except:
     if not debug_mode:
         with open(os.path.expanduser('~') + r'\Dropbox\work\0instr_report.txt', 'w') as f:
             f.write(traceback.format_exc() + '\n')
-            # TODO f.write mesa, X, Y
             #del Vs, Is  # Because they are too long  # error if the doesn't exist
             f.write('\n---------- globals() ----------\n{}\n'.format(globals()))
             f.write('\n---------- locals() ----------\n{}\n'.format(locals()))
@@ -173,7 +170,8 @@ finally:
     # Close the database
     cur_params.close()
     cur_IVs.close()
-    #shutil.copy2(db_params, db_copy_dir)  # TODO: test, mkdir if not exist
-    #shutil.copy2(db_IVs, db_copy_dir)
+    # Copy to dropbox
+    shutil.copy2(c.sql_params_local, c.dropbox_dir)  # TODO: test, mkdir if not exist
+    shutil.copy2(sql_IVs_local, c.dropbox_dir)
 
 input('Done.')
