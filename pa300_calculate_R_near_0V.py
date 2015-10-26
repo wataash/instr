@@ -22,7 +22,7 @@ mask, X_min, X_max, Y_min, Y_max = \
                       ).fetchone()
 
 mesa_area_pairs = \
-    cur_params.execute('SELECT name, area FROM mesas WHERE mask=?',
+    cur_params.execute('SELECT mesa, area FROM mesas WHERE mask=?',
                        (mask,)).fetchall()
 
 olds = {}  # old and
