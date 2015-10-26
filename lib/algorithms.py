@@ -1,6 +1,7 @@
-﻿import math
+﻿# Std libs
+import math
 from operator import itemgetter
-
+# Non-std libs
 import numpy as np
 
 
@@ -51,28 +52,34 @@ def remove_X_near_0(XYZs, X_threshold):
 
     In: np.array([[-1, -10], [-0.1, -1], [0, 0], [0.1, 1], [1, 10]]), 0.2
     ->  np.array([[-1, -10],                               [1, 10]])
+    remove_X_near_0([[1,2,3], [0,3,4]], 0.5)
+    ->              [[1,2,3]]
     """
+    if X_threshold <= 0:
+        raise ValueError('X_threshold must be grater than zero.')
     res_XYZs = []
     for XYZ in XYZs:
         if X_threshold < abs(XYZ[0]):
             res_XYZs.append(XYZ)
-    return np.array(res_XYZs)
+    if isinstance(XYZ, np.ndarray):
+        return np.array(res_XYZs)
+    else:
+        return res_XYZs
 
 def rotate_vector(x, y, theta_deg):
     theta_rad = theta_deg * math.pi/180
     return math.cos(theta_rad)*x - math.sin(theta_rad)*y, math.sin(theta_rad)*x + math.cos(theta_rad)*y
 
-def zigzag_XY(start_X, start_Y, max_X, max_Y, go_right_first=True):
+def zigzag_XY(start_X, start_Y, max_X, max_Y, direction='r'):
     """
-    zigzag_XY(2, 2, 3, 3) -> [(2,2), (3,2), (3,3), (2,3), (1,3)] (go right up left left)
+    zigzag_XY(2, 2, 3, 3, 'r') -> [(2,2), (3,2), (3,3), (2,3), (1,3)] (go right up left left)
 
-    zigzag_XY(2, 1, 2, 2, False) -> [(2,1), (1,1), (1,2), (2,2)] (go left up right)
+    zigzag_XY(2, 1, 2, 2, 'Left') -> [(2,1), (1,1), (1,2), (2,2)] (go left up right)
 
     :type start_X: int
     :type start_Y: int
     :type max_X: int
     :type max_Y: int
-    :type go_right_first: bool
     :rtype: list(tuple(int))
     """
     res = []
@@ -82,16 +89,18 @@ def zigzag_XY(start_X, start_Y, max_X, max_Y, go_right_first=True):
     if start_X < 0 or max_X < start_X or start_Y < 0 or max_Y < start_Y:
         raise ValueError('XY out of range.')
 
-    if go_right_first:
+    if direction in ['r', 'right', 'R', 'Right']:
         while X <= max_X:
             res.append((X, Y))
             X += 1
         go_right = False
-    else:
+    elif direction in ['l', 'left', 'L', 'Left']:
         while 1 <= X:
             res.append((X, Y))
             X -= 1
         go_right = True
+    else:
+        raise ValueError('Wrong direction')  # TODO detailed
     Y+= 1
 
     while Y <= max_Y:
@@ -119,8 +128,34 @@ def log_list(start, end, steps):
         raise ValueError('steps should be int.')
     return [start * (end/start)**(n/steps) for n in range(steps + 1)]
 
+def remove_xyz_by_x(remove_func, *kwargs):
+    """imcomplete."""
+    # TODO: complete
+    if len(kwargs) == 1:
+        # [(x,y,z), (x,y,z), ...]
+        xyzs = kwargs[0]
+        if isinstance(xyzs, list(list)):
+            raise NotImplementedError
+        elif isinstance(xyzs, np.ndarray):
+            raise NotImplementedError
+    elif len(kwargs) > 1:
+        # [x, x, ...], [y, ...], [z, ...], ...
+        if isinstance(kwargs[0], list):
+            raise NotImplementedError
+        elif isinstance(kwargs[0], np.ndarray):
+            delete_index = []
+            res = []
+            for i, x in enumerate(kwargs[0]):
+                if remove_func(x):
+                    delete_index.append(i)
+            for items in kwargs:
+                res.append(np.delete(items, delete_index))
+            return res
+
 
 if __name__ == '__main__':
+    tmp = remove_xyz_by_x(lambda x: x < 10, np.array([2,4,6,8,10,12,14]), np.array([1,2,3,4,5,6,7]))
+
     tmp = log_list(1, 10000, 30)
     tmp = log_list(-1, -10, 10)
     tmp = log_list(10, 1, 10)
@@ -129,8 +164,8 @@ if __name__ == '__main__':
 
     tmp = np.array([[-1, -10], [-0.1, -1], [0, 0], [0.1, 1], [1, 10]])
     tmp = remove_X_near_0(tmp, 0.2)
-    print(zigzag_XY(2, 2, 3, 3))
-    print(zigzag_XY(2, 1, 2, 2, False))
+    print(zigzag_XY(2, 2, 3, 3, 'r'))
+    print(zigzag_XY(2, 1, 2, 2, 'Left'))
     # print(zigzag_XY(3, -1, 4, 4))
     # print(zigzag_XY(-1, 4, 4, 4, True))
     # print(zigzag_XY(1, 5, 2, 2))

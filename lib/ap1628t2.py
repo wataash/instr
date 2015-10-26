@@ -1,4 +1,5 @@
-﻿import time
+﻿# Std libs
+import time
 
 if __name__ == "__main__" and __package__ is None:
     import visa

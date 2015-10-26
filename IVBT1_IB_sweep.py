@@ -1,9 +1,10 @@
-﻿import os
+﻿# Std libs
+import os
 import sqlite3
 import time
-
+# Non-std libs
 import visa
-
+# My libs
 from lib.ap1628t2 import AP1628T2
 from lib.keithley import Keithley2636A
 from lib.algorithms import log_list

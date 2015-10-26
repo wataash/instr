@@ -1,5 +1,6 @@
-﻿import math
-
+﻿# Std libs
+import math
+# Non-std libs
 import visa
 
 if __name__ == "__main__" and __package__ is None:
@@ -11,14 +12,26 @@ else:
 class Agilent4156C(BaseInstr):
     def __init__(self, instr_rsrc, timeout_sec, use_us_commands, debug_mode=False):
         self._debug_mode = debug_mode
-        super().__init__(instr_rsrc, timeout_sec, self._debug_mode, 'HEWLETT-PACKARD,4156C')  # TODO: test
+        super().__init__(instr_rsrc, timeout_sec, self._debug_mode, 'HEWLETT-PACKARD,4156C')
         self._use_us_commands = use_us_commands
+        self._integ_time = 'SHOR'
         if debug_mode:
             pass
         else:
             self.w('*RST')  # Restore default configuration
             self.w('*CLS')  # Clear query buffer
             self.q_err()
+
+    @property
+    def integ_time(self):
+        return self._integ_time
+    @integ_time.setter
+    def integ_time(self, value):
+        if not value in ['SHOR', 'MED', 'LONG']:
+            raise ValueError("integ_time: 'SHOR' or 'MED', 'LONG'")
+        self._integ_time = value
+        self.w(":PAGE:MEAS:MSET:ITIM {}".format(self._integ_time))
+        self.q_err()
 
     def configure_smu(self, smu_num, mode, func, V_name=None, I_name=None):
         """
@@ -84,7 +97,7 @@ class Agilent4156C(BaseInstr):
                 self.w(":PAGE:DISP:GRAP:Y2:SCAL LOG;")
         self.q_err()
 
-    def configure_display(self, x_min, x_max, y1_min=1e-15, y1_max=1, y2_min=1e-15, y2_max=1):
+    def configure_display(self, x_min, x_max, y1_min=1e-15, y1_max=1e-3, y2_min=1, y2_max=1e12):  # 12divs on log scale
         """
         desc
         :param x_min:
@@ -126,19 +139,20 @@ class Agilent4156C(BaseInstr):
         if tmp[0] != '+0':
             raise RuntimeError('Error on Agilent 4156C.')
 
-    def contact_test(self, gnd_smu, bias_smu, time_interval_second,
+    def contact_test(self, gnd_smu, bias_smu, time_interval_second, reset=True,
                      applyV=1e-3, compI=10e-3, meas_time_second=60, points=0):
         """
         Returns float[] times, float[] currents
         :rtype: list of float, list of float
         """
+        if reset:
+            self.w('*RST')
         if self._debug_mode:
             print('Debug: return dummy data')
             return [[0,0.19,0.3,0.41,0.52,0.63,0.74,0.85,0.96,1.07,1.18,1.29,1.4,1.51,1.62,1.73,1.84,1.95,2.06,2.17,2.28,2.39,2.5,2.61,2.72,2.83,2.94,3.05,3.16,3.27,3.38,3.49,3.6,3.71,3.82,3.93,4.04,4.15,4.26,4.37,4.48,4.59,4.7,4.81,4.92,5.03,5.14,5.25,5.36,5.47,5.58,5.69,5.8,5.91,6.02,6.13,6.24,6.35,6.46,6.57,6.68,6.79,6.9,7.01,7.12,7.23,7.34,7.45,7.56,7.67,7.78,7.89,8,8.11,8.22,8.33,8.44,8.55,8.66,8.77,8.88,8.99,9.1,9.21,9.32,9.43,9.54,9.65,9.76,9.87,9.98,10.09,10.2,10.31,10.42,10.53,10.64,10.75,10.86,10.97],        [-1.84E-12,-1.57E-12,-1.51E-12,-1.48E-12,-1.48E-12,-1.5E-12,-1.43E-12,-1.46E-12,-1.4E-12,-1.42E-12,-1.46E-12,-1.43E-12,-1.42E-12,-1.41E-12,-1.44E-12,-1.41E-12,-1.44E-12,-1.41E-12,-1.43E-12,-1.4E-12,-1.43E-12,-1.41E-12,-1.39E-12,-1.41E-12,-1.4E-12,-1.4E-12,-1.39E-12,-1.37E-12,-1.39E-12,-1.4E-12,-1.35E-12,-1.41E-12,-1.4E-12,-1.4E-12,-1.37E-12,-1.38E-12,-1.35E-12,-1.38E-12,-1.38E-12,-1.41E-12,-1.42E-12,-1.4E-12,-1.4E-12,-1.4E-12,-1.33E-12,-1.32E-12,-1.37E-12,-1.32E-12,-1.34E-12,-1.37E-12,-1.35E-12,-1.37E-12,-1.36E-12,-1.34E-12,-1.34E-12,-1.34E-12,-1.34E-12,-1.33E-12,-1.32E-12,-1.33E-12,-1.36E-12,-1.38E-12,-1.37E-12,-1.35E-12,-1.35E-12,-1.33E-12,-1.37E-12,-1.34E-12,-1.38E-12,-1.33E-12,-1.34E-12,-1.38E-12,-1.34E-12,-1.36E-12,-1.36E-12,-1.36E-12,-1.35E-12,-1.39E-12,-1.4E-12,-1.36E-12,-1.37E-12,-1.38E-12,-1.39E-12,-1.41E-12,-1.39E-12,-1.38E-12,-1.33E-12,-1.34E-12,-1.34E-12,-1.33E-12,-1.35E-12,-1.35E-12,-1.42E-12,-1.4E-12,-1.37E-12,-1.33E-12,-1.37E-12,-1.34E-12,-1.31E-12,-1.38E-12]]
         if points == 0:
             points = int(meas_time_second / time_interval_second)
         points = min(8000, points)  # 8000: OK, 8500: "ERROR 7: DATA buffer full. Too many points."
-        self.w('*RST')
         if self._use_us_commands:
             raise NotImplementedError
         else:
@@ -154,7 +168,7 @@ class Agilent4156C(BaseInstr):
             self.w(":PAGE:MEAS:SAMP:CONS:SMU{}:COMP {};".format(bias_smu, compI))
         self.set_user_func('R', 'ohm', 'V{0}/I{0}'.format(bias_smu))
         self.set_Y("I{}".format(bias_smu), True, 'R', True)
-        self.configure_display(0, meas_time_second, 1e-15, 1e-3, 1, 1e12)  # Same width of (decade/div, 12div) for Y1 and Y2.
+        self.configure_display(0, meas_time_second, 1e-15, 1e-3, 1, 1000)
         if self._use_us_commands:
             raise NotImplementedError
         else:
@@ -169,7 +183,7 @@ class Agilent4156C(BaseInstr):
                 raise RuntimeError
             return times, currents
 
-    def double_sweep_from_zero(self, gnd_smu, swp_smu, end_V, step_V=None, comp_I=10e-3):
+    def double_sweep_from_zero(self, gnd_smu, swp_smu, end_V, step_V=None, comp_I=10e-3, reset=True):
         """
         You can write v, i, _ = double_sweep_from_zero(...).
         If step_V is None -> #step = 1001 (max), step_V = end_V/1001
@@ -201,9 +215,11 @@ class Agilent4156C(BaseInstr):
         if self._debug_mode:
             return [0,0.001,0.002,0.001,0], [0,1e-6,2e-6,1e-6,0], False
         
-        is_P = end_V > 0  # is positive sweep
-        self.w('*RST')
-        self.q_err()
+        if reset:
+            self.w('*RST')
+            self.integ_time = self.integ_time
+            self.q_err()
+
         self.disable_all_units(gnd_smu, swp_smu)
         self.configure_smu(gnd_smu, 3, 3)
         self.configure_smu(swp_smu, 1, 1)
@@ -219,6 +235,7 @@ class Agilent4156C(BaseInstr):
             # TODO: stop at abnormal
 
         self.set_user_func('R', 'ohm', 'V{0}/I{0}'.format(swp_smu))
+        is_P = end_V > 0  # is positive sweep
         self.set_Y("I{}".format(swp_smu), True, 'R', True)
         self.configure_display(0 if is_P else end_V,
                                end_V if is_P else 0,
@@ -240,5 +257,8 @@ if __name__ == '__main__':
     rm = visa.ResourceManager()
     a_rsrc = rm.open_resource('GPIB0::18::INSTR')
     a = Agilent4156C(a_rsrc, 600, False)
-    #a.double_sweep_from_zero(2, 1, 100e-3, 1e-3)
+    a.w('*RST')
+    a.integ_time = 'SHOR'
     a.contact_test(2, 1, 10e-3)
+    #a.integ_time = 'MED'
+    #a.double_sweep_from_zero(2, 1, 10e-3, 1e-3)
