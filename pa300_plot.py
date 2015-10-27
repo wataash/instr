@@ -14,7 +14,6 @@ import constants as c
 # Default line color cycle
 # print(matplotlib.rcParams['axes.color_cycle'])
 # => ['g', 'b', 'r', 'c', 'm', 'y', 'k']
-
 class Pa300Plot():
     """description of class"""
     def __init__(self, sample, sql_params_path):
@@ -240,8 +239,7 @@ class Pa300PlotIV(Pa300Plot):
         plt.legend()
         plt.show()
 
-    def plot_R_V_for_check(self, mesa_X_Ys):
-        self.var = 'R'
+    def plot_I_V(self, mesa_X_Ys):
         for mesa, X, Y in mesa_X_Ys:
             print(mesa, X, Y)
             res = self.cur_params.execute('SELECT t0 FROM IV_params \
@@ -252,14 +250,27 @@ class Pa300PlotIV(Pa300Plot):
             query = 'SELECT V, I FROM IVs WHERE t0 in ({})'. \
                 format(','.join('?'*len(t0s)))
             VIs = self.cur_IVs.execute(query, t0s).fetchall()
-            VIs = remove_X_near_0(VIs, 0.010)
             Vs, Is = zip(*VIs)
-            Rs = [VI[0]/VI[1] for VI in VIs]
+            Js = [I / self.area_dic[mesa] for I in Is]
+            if self.var in ['R', 'RA']:
+                VIs = remove_X_near_0(VIs, 0.010)
+                Vs = [VI[0] for VI in VIs]
+                Rs = [VI[0] / VI[1] for VI in VIs]
+                RAs = [R * self.area_dic[mesa] for R in Rs]
             label = '{} X{} Y{}'.format(mesa, X, Y)
-            plt.semilogy(Vs, Rs, '-', label=label)
+            if self.var == 'R':
+                plt.semilogy(Vs, Rs, '-', label=label)
+            elif self.var == 'RA':
+                plt.semilogy(Vs, RAs, '-', label=label)
+            elif self.var == 'J':
+                plt.plot(Vs, Js, '-', label=label)
+            elif self.var == 'I':
+                plt.plot(Vs, Is, '-', label=label)
+            else:
+                raise NotImplementedError
         plt.xlabel('Voltage (V)')
         plt.ylabel(self.ylabel)
-        plt.legend(loc=8)
+        plt.legend(loc='best')
         plt.show()
 
     def plot_I_VXY(self, V_min, V_max, remove_V):
