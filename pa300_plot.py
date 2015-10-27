@@ -25,11 +25,9 @@ class Pa300Plot():
         # Plot config
         self.var = 'R'
         self.var_unit = {'J': 'Am2', 'R': 'ohm', 'RA': 'ohmm2'}[self.var]
-        self.var_min = {'J': 0, 'R': 0, 'RA': 0}[self.var]
-        self.var_max = {'J': 0, 'R': 0, 'RA': 0}[self.var]
         self.auto_scale = True
-        self.c_min = {'J': 0, 'R': 1e3, 'RA': 1e-8}[self.var]
-        self.c_max = {'J': 1, 'R': 1e5, 'RA': 1e-3}[self.var]
+        self.var_min = {'J': 0, 'R': 1e3, 'RA': 1e-8}[self.var]
+        self.var_max = {'J': 1, 'R': 1e5, 'RA': 1e-3}[self.var]
         # Miscellaneous
         self.save_dir = os.path.expanduser('~/Desktop/')
 
@@ -142,7 +140,7 @@ class Pa300Plot():
                 sc = ax.scatter(
                     Xs, Ys, 
                     c=zs, cmap='coolwarm', s=1200, marker='s', norm=LogNorm(),
-                    vmin=self.c_min, vmax=self.c_max)  # vmin, vmax: color scale
+                    vmin=self.var_min, vmax=self.var_max)  # vmin, vmax: color scale
             #plt.colorbar(sc)
 
             file_name = self.save_dir + '{sample}_{mesa}_{var_y}-XY_auto.png'.\
@@ -151,7 +149,7 @@ class Pa300Plot():
                 file_name = \
                     file_name.replace(
                         'auto','{c_min:.0E}_{c_max:1.0E}'.
-                        format(c_min=self.c_min, c_max=self.c_max))
+                        format(c_min=self.var_min, c_max=self.var_max))
             plt.savefig(file_name, transparent=True, dpi=100)
 
 
@@ -190,7 +188,7 @@ class Pa300PlotIV(Pa300Plot):
                     '{}_{}_{}_{}_{}_{}_{}V_{}V.png'. \
                     format(self.sample, mesa,
                            self.var, self.var_unit,
-                           str(self.c_min), str(self.var_max),  # TODO test
+                           str(self.var_min), str(self.var_max),  # TODO test
                            V_min, V_max)
             print('Save to:', save_file_name_base)
 
