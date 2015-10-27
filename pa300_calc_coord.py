@@ -15,14 +15,17 @@ for dat in dats:
     dX, dY = cur_params.execute('SELECT d_X, d_Y FROM masks WHERE mask=?',\
                                 (mask,)).fetchone()
     for (X, Y) in product(range(1,21), range(1,21)):
-        x_mesa = (X-1)*dX + xm_mesa
-        y_mesa = (Y-1)*dY + ym_mesa
-        x_pad = (X-1)*dX + xm_pad
-        y_pad = (Y-1)*dY + ym_pad
+        xs_mesa = (X-1)*dX + xm_mesa
+        ys_mesa = (Y-1)*dY + ym_mesa
+        xs_pad = (X-1)*dX + xm_pad
+        ys_pad = (Y-1)*dY + ym_pad
+        X_pad = X + xm_pad/dX
+        Y_pad = Y + ym_pad/dY
         print(mask, mesa, X, Y)
-        cur_params.execute('''INSERT OR REPLACE INTO
-                              coord(mask, mesa, X, Y, xmesa, ymesa, xpad, ypad)
-                              VALUES(?,   ?,    ?, ?, ?,     ?,     ?,    ?)''',
-                           (mask, mesa, X, Y, 
-                            x_mesa, y_mesa, x_pad, y_pad,))
+        cur_params.execute('''
+            INSERT OR REPLACE INTO
+            coord(mask, mesa, X, Y,
+                  xs_mesa, ys_mesa, xs_pad, ys_pad, X_pad, Y_pad)
+            VALUES(?,?,?,?,?,?,?,?,?,?)''',
+            (mask, mesa, X, Y, xs_mesa, ys_mesa, xs_pad, ys_pad, X_pad, Y_pad))
 conn_params.commit()
