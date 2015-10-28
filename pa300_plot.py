@@ -94,16 +94,13 @@ class Pa300Plot():
                 X_pads.append(dat[0])
                 Y_pads.append(dat[1])
                 Rs.append(R)
+                if self.annotate:
+                    ann = 'X{}Y{} {}'.format(X, Y, mesa)
+                    ax.annotate(ann, (X_pads[-1], Rs[-1]))
             ax.scatter(X_pads, Rs,
                        c=self.color_dic[mesa], marker=self.marker_dic[mesa],
                        s=50, label=mesa)
-            if self.annotate:
-                for i in range(len(X_pads)):
-                    if self.annotate_inverval[0] < \
-                            Rs[i] < self.annotate_inverval[1]:
-                        ann = '{:.1f}'.format(Y_pads[i])
-                        #ann = mesa
-                        ax.annotate(ann, (X_pads[i], Rs[i]))
+
             #ax.legend(loc=2) # TODO bug: all blue
             if not self.auto_scale:
                 plt.ylim([self.var_min, self.var_max])
@@ -239,8 +236,8 @@ class Pa300PlotIV(Pa300Plot):
         plt.legend()
         plt.show()
 
-    def plot_I_V(self, mesa_X_Ys):
-        for mesa, X, Y in mesa_X_Ys:
+    def plot_I_V2(self, X_Y_mesas):
+        for X, Y, mesa in X_Y_mesas:
             print(mesa, X, Y)
             res = self.cur_params.execute('SELECT t0 FROM IV_params \
                         WHERE sample=? AND X=? AND Y=? AND mesa=?',
@@ -264,13 +261,17 @@ class Pa300PlotIV(Pa300Plot):
                 plt.semilogy(Vs, RAs, '-', label=label)
             elif self.var == 'J':
                 plt.plot(Vs, Js, '-', label=label)
+                plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))  # force scientific form
             elif self.var == 'I':
                 plt.plot(Vs, Is, '-', label=label)
+                plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))  # force scientific form
             else:
                 raise NotImplementedError
+        plt.xlim([-0.2, 0.2])
         plt.xlabel('Voltage (V)')
         plt.ylabel(self.ylabel)
-        plt.legend(loc='best')
+        #plt.legend(loc='best')
+        plt.legend(loc='lower center')
         plt.show()
 
     def plot_I_VXY(self, V_min, V_max, remove_V):
@@ -419,8 +420,9 @@ if __name__ == '__main__':
     #pp = Pa300PlotIV(c.p_sample, c.sql_params_dropbox, c.p_sql_IVs_path)
     #pp.var = 'R'
 
-    #pp.plot_R_V_for_check(L)
+    #pp.plot_I_V2(c.p_sample_X_Y_mesas)
     #exit()
+
     #pp.plot_I_VXY(-0.2, 0.2, 0.020)
 
     p = Pa300Plot(c.p_sample, c.sql_params_dropbox)
