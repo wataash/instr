@@ -1,4 +1,4 @@
-# Std libs
+﻿# Std libs
 from datetime import datetime, timedelta
 import sqlite3
 # Non-std libs
@@ -12,8 +12,11 @@ import constants as c
 cnx = mysql.connector.connect(**c.mysql_config)
 cursor = cnx.cursor()
 
-
-cursor.execute('INSERT INTO XY (X, Y) VALUES (1, 1)')
+XYs = []
+for Y in range(1, 101):
+    for X in range(1,101):
+        XYs.append((X,Y))
+cursor.executemany('INSERT INTO XY (X, Y) VALUES (%s, %s)', XYs)
 
 #add_VI_param1 = ('INSERT INTO VI_param '
 #                 '(device_id, dt, points, comp, V, inst) '
