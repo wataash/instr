@@ -5,10 +5,8 @@ import time
 # Non-std libs
 import visa
 # My libs
-from lib.keithley import Keithley2636A
-from lib.sci9700 import Sci9700
-from lib.algorithms import log_list
-
+from instr.ke2636a import Keithley2636A
+from instr.sci9700 import Sci9700
 
 ## Configurations ---------------------------------------------------------------
 debug_mode = False  # Set True while development without instruments.
@@ -21,7 +19,7 @@ sci_timeout_sec = 1
 
 sqlite3_file_name = os.path.expanduser('~') + '/Documents/instr_data/IT.sqlite3'
 
-sample = 'E0339 X12Y15 D169'
+sample = 'dummy_sample'
 
 voltage = 10e-3
 compliance = 100e-6
@@ -40,8 +38,8 @@ else:
     ke_rsrc = rm.open_resource(ke_rsrc_name)
     sci_rsrc = rm.open_resource(sci_rsrc_name)
 
-ke = Keithley2636A(ke_rsrc, ke_timeout_sec, debug_mode)
-sci = Sci9700(sci_rsrc, sci_timeout_sec, debug_mode)
+ke = Keithley2636A(debug_mode, ke_rsrc, ke_timeout_sec)
+sci = Sci9700(debug_mode, sci_rsrc, sci_timeout_sec)
 
 
 # Connect to database ----------------------------------------------------------
@@ -66,7 +64,7 @@ try:
             time.sleep(1)
             new_t = int(time.strftime('%Y%m%d%H%M%S'))
         t = new_t
-        
+
         temp = sci.read_temp('A')
         I = ke.read_single_read()
         points += 1
@@ -79,4 +77,3 @@ finally:
     ke.read_single_off()
     sqlite3_connection.commit()
     cursor.close()
-

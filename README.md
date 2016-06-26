@@ -1,32 +1,30 @@
+# TODO
+conda install
+
 # Instr
-Automates laboratory Instruments, visuallize aquired data.
+Automates laboratory Instruments, visuallize aquired data.  
 This software is released under the MIT License, see LICENSE.txt.  
-Developing environment: python 3.4, PyCharm Professional Edition 4.5.3, Visual Studio 2015 Enterprise + PTVS 2.2
+
+## Developing environment:  
+- python 3.5
+- PyCharm Professional Edition 5.0.2
 
 ## Requirements
-- python 3.4
-- pyvisa  
-`pip install pyvisa`
+- python 3.5
+- ipython-notebook
+- keyring
+- matplotlib
+- mpltools
+- mysql-connector-python
+- numpy
+- pyvisa
+- scipy
+- statsmodels
+- unittest2
 
-## Instrument Systems
-
-### SUSS PA300 auto prober
-* SUSS PA300
-* Agilent 4156C
-
-If you use SUSS PA200 or Agilent 4155C, maybe this program would work with slight modifications.
-
-### I - (V, B, T) measurement
-Not Implemented.
-
-## Files
-Imcomplete
-
-| Directory or file       | Description                          |
-|--------------|-----------------------------------------------------|
-| .idea/       | Configurations for pycharm                          |
-| .dummy_data/ |                                                     |
-| lib/         | library                                             |
-| old_csharp/  | Old code. (this program was written in c# at first) |
-|IV_sweep.py| |
-|configure.py| |
+`conda create -y -n lab35
+python=3.5 ipython-notebook
+matplotlib mysql-connector-python numpy scikit-learn scipy seaborn statsmodels`  
+`source activate lab35` (For Linux, OS X)  
+`activate lab35` (For Windows, doesn't work on PowerShell)  
+`pip install keyring mpltools pyvisa unittest2`

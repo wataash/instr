@@ -1,20 +1,14 @@
-﻿if __name__ == "__main__" and __package__ is None:
-    import visa
-    from base_instr import BaseInstr
-else:
-    from lib.base_instr import BaseInstr
+﻿from instr.base import BaseInstr
 
 
 class LSCI331(BaseInstr):
-    """LakeShore 331 Temereture Controller"""
-    def __init__(self, instr_rsrc, timeout_sec, debug_mode=False):
-        self._debug_mode = debug_mode
-        super().__init__(instr_rsrc, timeout_sec, self._debug_mode)
-        if not debug_mode:
-            if self.q('*IDN?') != 'LSCI,MODEL331S,333342,061404':
-                raise RuntimeError('Failed to connect to LCSI 331.')
-            self.q('*RST')  # TODO: work?
-            self.q('*CLS')  # TODO: work?
+    def __init__(self, rsrc=None, timeout_sec=5, reset=True):
+        idn = 'LSCI,MODEL331S,333342,061404'
+        super().__init__(rsrc, idn, timeout_sec, reset)
+
+    def reset(self):
+        self.q('*RST')  # TODO: work?
+        self.q('*CLS')  # TODO: work?
 
     def read_temp_kelvin(self, input_='A', unit='K'):
         """input_ 'A' or 'B'
