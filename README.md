@@ -1,6 +1,3 @@
-# TODO
-conda install
-
 # Instr
 Automates laboratory Instruments, visuallize aquired data.  
 This software is released under the MIT License, see LICENSE.txt.  
